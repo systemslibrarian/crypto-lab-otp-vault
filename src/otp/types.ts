@@ -37,6 +37,31 @@ export function toHex(byte: number): string {
   return byte.toString(16).padStart(2, "0");
 }
 
+/** Space-separated lowercase hex for a whole byte array. */
+export function bytesToHex(bytes: Bytes): string {
+  return Array.from(bytes, (b) => toHex(b)).join(" ");
+}
+
+/**
+ * Parse a hex string into bytes. Tolerant of whitespace, commas, and an
+ * optional 0x prefix. Returns null on any non-hex character or odd digit count
+ * so callers can show a precise validation error instead of crashing.
+ */
+export function parseHex(input: string): Bytes | null {
+  const cleaned = input
+    .trim()
+    .replace(/0x/gi, "")
+    .replace(/[\s,]+/g, "");
+  if (cleaned.length === 0) return new Uint8Array(0);
+  if (cleaned.length % 2 !== 0) return null;
+  if (!/^[0-9a-fA-F]+$/.test(cleaned)) return null;
+  const out = new Uint8Array(cleaned.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(cleaned.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
 /** Build a ByteView for honest, non-snapping display of a single byte. */
 export function viewByte(byte: number): ByteView {
   const printable = isPrintable(byte);

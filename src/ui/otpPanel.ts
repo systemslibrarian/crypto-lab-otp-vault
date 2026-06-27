@@ -84,6 +84,7 @@ export function otpPanel(): HTMLElement {
   render();
 
   return panelShell({
+    id: "panel-otp",
     tone: "calm",
     icon: "🔒",
     title: "1 · One-Time Pad — encrypt & decrypt",
@@ -113,10 +114,12 @@ export interface PanelSpec {
   badge: string;
   notWhat: string;
   body: (Node | string)[];
+  /** Optional DOM id so the guided walkthrough can scroll to this panel. */
+  id?: string;
 }
 
 export function panelShell(spec: PanelSpec): HTMLElement {
-  return el("section", { class: `panel panel--${spec.tone}` }, [
+  return el("section", { class: `panel panel--${spec.tone}`, ...(spec.id ? { id: spec.id } : {}) }, [
     el("header", { class: "panel-head" }, [
       el("span", { class: "panel-icon", "aria-hidden": "true", text: spec.icon }),
       el("h2", { class: "panel-title", text: spec.title }),

@@ -89,7 +89,7 @@ describe("two-time-pad crib-drag recovers BOTH plaintexts via the UI", () => {
   });
 
   it("a wrong crib does not reconstruct real text at offset 0", () => {
-    const cribInput = panel.querySelector<HTMLInputElement>("#crib-input")!;
+    const cribInput = panel.querySelector<HTMLInputElement>(".crib-input")!;
     cribInput.value = "zzzz";
     cribInput.dispatchEvent(new Event("input"));
     const pinBtn = Array.from(panel.querySelectorAll("button")).find((b) =>

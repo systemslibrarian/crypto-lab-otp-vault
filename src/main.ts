@@ -2,6 +2,9 @@ import "./style.css";
 import { otpPanel } from "./ui/otpPanel.ts";
 import { perfectSecrecyPanel } from "./ui/perfectSecrecyPanel.ts";
 import { twoTimePadPanel } from "./ui/twoTimePadPanel.ts";
+import { keystreamReusePanel } from "./ui/keystreamReusePanel.ts";
+import { importPanel } from "./ui/importPanel.ts";
+import { walkthrough } from "./ui/walkthrough.ts";
 
 // Mount all content at #app. The standardization pass (Parts 0 + A–E) wraps this
 // with the shared header, theme toggle, README, and scripture footer.
@@ -38,4 +41,13 @@ grounding.innerHTML =
   "secrecy, and the classic two-time-pad / crib-dragging cryptanalysis. Everything runs " +
   "in your browser — keys come from <code>crypto.getRandomValues</code> and are never stored or sent.";
 
-app.append(intro, otpPanel(), perfectSecrecyPanel(), twoTimePadPanel(), grounding);
+app.append(
+  intro,
+  walkthrough(),
+  otpPanel(),
+  perfectSecrecyPanel(),
+  twoTimePadPanel(),
+  keystreamReusePanel(),
+  importPanel(),
+  grounding,
+);

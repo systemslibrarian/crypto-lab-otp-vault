@@ -79,6 +79,7 @@ export function perfectSecrecyPanel(): HTMLElement {
   render();
 
   return panelShell({
+    id: "panel-secrecy",
     tone: "neutral",
     icon: "🧩",
     title: "2 · Perfect secrecy — every plaintext is possible",
