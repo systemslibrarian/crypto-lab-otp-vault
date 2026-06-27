@@ -2,17 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        document.documentElement.setAttribute('data-theme', saved ?? 'dark');
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>One-Time Pad &amp; the Two-Time-Pad Attack — Crypto Lab</title>
+    <title>OTP Vault — crypto-lab</title>
     <meta
       name="description"
-      content="Interactive demo: one-time pad perfect secrecy and the catastrophic key-reuse (two-time-pad) attack with crib-dragging. Runs entirely in the browser."
+      content="One-time pad perfect secrecy and the two-time-pad key-reuse attack with interactive crib-dragging — real XOR over real bytes, no backend."
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>"
     />
   </head>
   <body>
-    <!-- Content mounts here. Header/theme-toggle/footer are added by the
-         standardization pass (Parts 0 + A–E), not by this demo. -->
+    <!-- Part 0 (canonical shared header) is applied here once the catalog
+         shared-header.html snippet is provided; do not hand-build one. -->
     <main id="app"></main>
+    <footer class="scripture-footer">
+      <p>So whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31</p>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
