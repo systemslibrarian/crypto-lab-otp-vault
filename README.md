@@ -1,4 +1,4 @@
-# OTP Vault
+# crypto-lab-otp-vault
 
 ## What It Is
 
@@ -41,6 +41,21 @@ let you import two ciphertexts (or load built-in challenges) and attack them you
 XOR is computed over real bytes in your browser; keys come from `crypto.getRandomValues` and
 are never stored or sent.
 
+## What Can Go Wrong
+
+- Key reuse (the two-time pad): XOR of two ciphertexts equals XOR of the two plaintexts, and crib dragging then peels both messages apart — the perfect-secrecy guarantee is gone instantly.
+- Non-random or short keys — reusing a passphrase, or treating PRNG output as a true pad — break the information-theoretic guarantee.
+- The same nonce-reuse failure carries directly into stream ciphers (ChaCha20, AES-CTR/GCM), which are an OTP over a generated keystream.
+- No integrity or authentication: an attacker who knows part of the plaintext can flip ciphertext bits to make controlled, undetected changes.
+- Key distribution and storage are the practical killers — the key must be as long as the message, exchanged securely in advance, and destroyed after one use.
+
+## Real-World Usage
+
+- Historically used for the highest-value diplomatic and intelligence links, including one-time-pad systems and the Moscow–Washington hotline.
+- The reference standard for "perfect secrecy" against which every other cipher is taught and judged.
+- Understanding OTP key reuse directly explains nonce-reuse disasters in modern stream ciphers and AEAD.
+- Crib dragging and key-reuse analysis remain practical cryptanalysis techniques against misused keystream ciphers.
+
 ## How to Run Locally
 
 ```bash
@@ -50,15 +65,15 @@ npm install
 npm run dev
 ```
 
-No environment variables are required — the demo runs entirely in the browser with no
-backend.
+## Related Demos
 
-## Part of the Crypto-Lab Suite
-
-> One of 100+ live browser demos at
-> [systemslibrarian.github.io/crypto-lab](https://systemslibrarian.github.io/crypto-lab/)
-> — spanning Atbash (600 BCE) through NIST FIPS 203/204/205 (2024).
+- [crypto-lab-chacha20-stream](https://systemslibrarian.github.io/crypto-lab-chacha20-stream/) — a real stream cipher and the nonce-reuse failure that mirrors two-time-pad.
+- [crypto-lab-nonce-guard](https://systemslibrarian.github.io/crypto-lab-nonce-guard/) — AES-GCM nonce reuse and the SIV construction that defends against it.
+- [crypto-lab-poly1305-mac](https://systemslibrarian.github.io/crypto-lab-poly1305-mac/) — the key-reuse attack on a polynomial MAC.
+- [crypto-lab-vigenere-break](https://systemslibrarian.github.io/crypto-lab-vigenere-break/) — classical crib and frequency analysis, the ancestor of crib dragging.
 
 ---
 
-*"Whether you eat or drink, or whatever you do, do all to the glory of God." — 1 Corinthians 10:31*
+*One of 60+ browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
+
+*"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
