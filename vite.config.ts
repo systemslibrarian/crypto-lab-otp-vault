@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 
-// Static site for GitHub Pages — base is set by the standardization pass if needed.
+// Static site for GitHub Pages — served from the project subpath.
 export default defineConfig({
-  base: "./",
+  base: "/crypto-lab-otp-vault/",
   test: {
     globals: true,
     environment: "node",
