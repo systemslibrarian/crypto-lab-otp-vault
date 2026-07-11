@@ -50,7 +50,10 @@ export function byteStrip(
   bytes: Bytes,
   opts: StripOptions = {},
 ): HTMLElement {
-  const cells = el("div", { class: "strip", role: "list", "aria-label": label });
+  // The strip scrolls horizontally (never wraps), so it must be keyboard
+  // focusable (WCAG 2.1.1 / axe scrollable-region-focusable). It already carries
+  // role="list" + aria-label for its accessible name.
+  const cells = el("div", { class: "strip", role: "list", "aria-label": label, tabindex: 0 });
   bytes.forEach((value, i) => {
     const view = viewByte(value);
     const isUnknown = opts.unknown?.(i) ?? false;

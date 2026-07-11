@@ -216,7 +216,9 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     const otherLabel = cribTarget === "p1" ? p2Label : p1Label;
     const cribLabel = cribTarget === "p1" ? p1Label : p2Label;
 
-    const row = el("div", { class: "reveal-row" });
+    // Horizontally scrollable, so keyboard-focusable with an accessible name
+    // (WCAG 2.1.1 / axe scrollable-region-focusable).
+    const row = el("div", { class: "reveal-row", tabindex: 0, role: "group", "aria-label": "Revealed plaintext bytes" });
     hit.revealed.forEach((value) => {
       const v = viewByte(value);
       row.append(

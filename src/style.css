@@ -15,10 +15,17 @@
   /* Semantic system-integrity tones (always paired with icon + text). */
   --calm: #3fb950; /* correct OTP use = good */
   --calm-bg: #11271a;
-  --danger: #f85149; /* key reuse exploited = bad */
+  --danger: #f85149; /* key reuse exploited = bad (borders/icons) */
   --danger-bg: #2a1416;
+  /* Solid red used as a FILL behind white text — darkened from --danger so
+     #fff clears 4.5:1 (bright --danger only makes ~3.3:1). */
+  --danger-fill: #b62a25;
   --warn: #d29922; /* amber: partial / caution */
   --warn-bg: #2a2113;
+  /* Accent used as TEXT on a surface. In dark this is the bright accent (passes
+     on dark surfaces); light overrides it to a darker blue that clears 4.5:1
+     on white. */
+  --accent-text: #6ea8fe;
 
   --mono: ui-monospace, "SFMono-Regular", "Cascadia Code", "Consolas", monospace;
 }
@@ -38,8 +45,12 @@
   --calm-bg: #dafbe1;
   --danger: #cf222e;
   --danger-bg: #ffebe9;
+  --danger-fill: #cf222e; /* #fff on #cf222e ≈ 4.8:1 */
   --warn: #9a6700;
   --warn-bg: #fff8c5;
+  /* Darker blue for accent-as-text on the light (white) surface: #0969da
+     clears 4.5:1 where the bright #6ea8fe only made ~2.4:1. */
+  --accent-text: #0969da;
 }
 
 * {
@@ -174,6 +185,16 @@ body {
   color: var(--text-dim);
   margin-top: 2rem;
 }
+/* Style the "Related demos" links: the browser default (#0000ee) fails contrast
+   on the dark surface. Use the AA accent-text token and keep a persistent
+   underline (these are inline links inside a text block). */
+.scripture-footer a {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+.scripture-footer a:hover {
+  text-decoration: none;
+}
 
 /* ---- panels ---- */
 
@@ -226,7 +247,7 @@ body {
   color: var(--danger);
 }
 .badge--neutral {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .not-what {
@@ -312,7 +333,7 @@ body {
   font-weight: 700;
 }
 .btn--pin {
-  background: var(--danger);
+  background: var(--danger-fill);
   color: #fff;
 }
 .btn--ghost {
@@ -382,7 +403,7 @@ body {
 .offset-readout {
   font-family: var(--mono);
   font-size: 0.8rem;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .strip {
@@ -498,7 +519,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--danger);
+  background: var(--danger-fill);
   color: #fff;
   font-family: var(--mono);
   font-weight: 700;
@@ -754,7 +775,7 @@ button.btn--ghost:disabled {
 .wt-progress {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
