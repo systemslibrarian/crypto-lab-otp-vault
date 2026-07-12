@@ -12,6 +12,28 @@ import { walkthrough } from "./ui/walkthrough.ts";
 const app = document.getElementById("app");
 if (!app) throw new Error("#app mount point not found");
 
+// Fleet-standard hero (managed): title block left, "why it matters" box right.
+const hero = document.createElement("header");
+hero.className = "cl-hero";
+hero.innerHTML = `
+  <div class="cl-hero-main">
+    <h1 class="cl-hero-title">OTP Vault</h1>
+    <p class="cl-hero-sub">One-Time Pad · Perfect Secrecy</p>
+    <p class="cl-hero-desc">
+      Encrypt and decrypt with a truly-random one-time pad, then reuse one keystream
+      across two messages and crib-drag the XOR of their ciphertexts to recover both plaintexts.
+    </p>
+  </div>
+  <aside class="cl-hero-why" aria-label="Why it matters">
+    <span class="cl-hero-why-label">WHY IT MATTERS</span>
+    <p class="cl-hero-why-text">
+      The one-time pad is the only cipher proven unbreakable — but that guarantee dies
+      the instant a key is used twice. Keystream reuse has sunk real systems (VENONA, WEP,
+      broken RNGs), turning "perfect" secrecy into a crib-dragging exercise.
+    </p>
+  </aside>
+`;
+
 const intro = document.createElement("div");
 intro.className = "lab-intro";
 intro.innerHTML = `
@@ -42,6 +64,7 @@ grounding.innerHTML =
   "in your browser — keys come from <code>crypto.getRandomValues</code> and are never stored or sent.";
 
 app.append(
+  hero,
   intro,
   walkthrough(),
   otpPanel(),
