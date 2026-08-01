@@ -11,6 +11,12 @@
   --text: #e6edf3;
   --text-dim: #9fb0c0;
   --border: #2a333f;
+  /* Control boundaries only (ghost buttons, copy buttons, selects, the danger
+     toggle). Those controls are transparent or filled with --surface-2, which sits
+     at 1.06-1.13:1 against the surface behind them, so the border is the sole
+     boundary and WCAG 2.1 SC 1.4.11 requires 3:1. Primary buttons are --accent /
+     --danger-fill filled and unaffected; --border stays for decorative rules. */
+  --border-strong: #5e738e;
 
   /* Semantic system-integrity tones (always paired with icon + text). */
   --calm: #3fb950; /* correct OTP use = good */
@@ -41,6 +47,7 @@
   --text: #1f2328;
   --text-dim: #57606a;
   --border: #d0d7de;
+  --border-strong: #778ba0;
   --calm: #1a7f37;
   --calm-bg: #dafbe1;
   --danger: #cf222e;
@@ -349,13 +356,13 @@ body {
 .btn--ghost {
   background: transparent;
   color: var(--text-dim);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
 }
 
 .select {
   background: var(--surface-2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;
@@ -377,7 +384,7 @@ body {
   font-size: 0.92rem;
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   margin-bottom: 0.9rem;
   cursor: pointer;
 }
@@ -483,7 +490,7 @@ body {
 
 .copy-btn {
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   color: var(--text-dim);
   border-radius: 5px;
   font-size: 0.72rem;
