@@ -67,10 +67,13 @@ export function keystreamReusePanel(): HTMLElement {
     );
   }
 
-  function update(): void {
+  // See twoTimePadPanel: a keystroke in P1/P2 leaves the strip meaning the same
+  // thing, so pinned cribs survive; a fresh keystream does not, so that path
+  // passes false.
+  function update(keepPins = true): void {
     recompute();
     renderCiphers();
-    workbench.refresh();
+    workbench.refresh({ keepPins });
   }
 
   const p1ta = makeTextarea(p1text, "Plaintext P1", (v) => { p1text = v; update(); });
@@ -86,7 +89,8 @@ export function keystreamReusePanel(): HTMLElement {
       text: "↻ New (still-reused) keystream",
       onclick: () => {
         keystream = generateKey(Math.max(p1.length, p2.length, 1));
-        update();
+        // A new keystream is a new strip; old pins would decode noise.
+        update(false);
       },
     }),
   ]);

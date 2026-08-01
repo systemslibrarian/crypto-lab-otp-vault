@@ -53,9 +53,12 @@ export function importPanel(): HTMLElement {
     );
   }
 
+  // Editing the pasted hex fires on every keystroke; the strip still means
+  // C1 ⊕ C2, so pinned cribs are kept (any that no longer fit are dropped
+  // individually and reported).
   function update(): void {
     recompute();
-    workbench.refresh();
+    workbench.refresh({ keepPins: true });
   }
 
   // Manual edits invalidate any loaded ground truth.
@@ -68,7 +71,8 @@ export function importPanel(): HTMLElement {
     truth = ch.truth; // enables the instructor reveal toggle for verification
     recompute();
     status.append(statusLine(ch.reused ? "🎯" : "🧪", ch.hint, ch.reused ? "neutral" : "calm"));
-    workbench.refresh();
+    // A different challenge is a different strip — start the attack clean.
+    workbench.refresh({ keepPins: false });
   }
 
   const datasetRow = el(

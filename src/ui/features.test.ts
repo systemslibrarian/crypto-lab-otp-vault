@@ -182,6 +182,64 @@ describe("import panel (#6)", () => {
   });
 });
 
+describe("pinned cribs survive message edits", () => {
+  let panel: HTMLElement;
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    panel = twoTimePadPanel();
+    document.body.append(panel);
+  });
+
+  const p1ta = () => panel.querySelectorAll<HTMLTextAreaElement>("textarea")[0];
+  const type = (ta: HTMLTextAreaElement, value: string) => {
+    ta.value = value;
+    ta.dispatchEvent(new Event("input"));
+  };
+  const pinCount = () => panel.querySelectorAll(".history-item").length;
+  const notice = () => panel.querySelector(".pin-notice")?.textContent ?? "";
+  const press = (key: string) =>
+    panel
+      .querySelector<HTMLElement>('[role="slider"]')!
+      .dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+
+  it("keeps pins and the reconstruction when P1 is edited", () => {
+    pin(panel); // "the " → P1 @ 0
+    expect(pinCount()).toBe(1);
+
+    type(p1ta(), "the quick brown fox jumps over the lazy dogs");
+    expect(pinCount()).toBe(1);
+    expect(glyphs(panel, "Reconstructed P1", 4)).toBe("the ");
+    expect(notice()).toBe("");
+  });
+
+  it("drops only the pins a shortened strip invalidates, and says so", () => {
+    pin(panel); // "the " → P1 @ 0
+    const crib = panel.querySelector<HTMLInputElement>(".crib-input")!;
+    crib.value = "dog";
+    crib.dispatchEvent(new Event("input"));
+    press("End"); // last valid offset — near the end of the strip
+    pin(panel);
+    expect(pinCount()).toBe(2);
+
+    type(p1ta(), "the quick"); // strip shrinks to 9 bytes
+    expect(pinCount()).toBe(1);
+    expect(panel.querySelector(".history-item")?.textContent).toMatch(/"the "/);
+    expect(glyphs(panel, "Reconstructed P1", 4)).toBe("the ");
+    expect(notice()).toMatch(/no longer fits/i);
+    expect(notice()).toMatch(/"dog"/);
+  });
+
+  it("clears pins when the keys are re-rolled, since the strip changes meaning", () => {
+    pin(panel);
+    expect(pinCount()).toBe(1);
+    Array.from(panel.querySelectorAll("button"))
+      .find((b) => /re-roll/i.test(b.textContent ?? ""))!
+      .click();
+    expect(pinCount()).toBe(0);
+    expect(notice()).toBe("");
+  });
+});
+
 describe("guided walkthrough (#1)", () => {
   it("starts, advances, and finishes", () => {
     document.body.innerHTML = "";

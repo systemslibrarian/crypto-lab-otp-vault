@@ -56,10 +56,14 @@ export function twoTimePadPanel(): HTMLElement {
     initialCrib: "the ",
   });
 
-  function update(): void {
+  // `keepPins` defaults to true because the common caller is a keystroke in a
+  // message textarea: the strip still means P1 ⊕ P2, so the learner's pinned
+  // reconstruction must survive. Only re-rolling the keys changes what the
+  // strip is, and that path passes false.
+  function update(keepPins = true): void {
     recompute();
     renderCiphers();
-    workbench.refresh();
+    workbench.refresh({ keepPins });
   }
 
   function renderCiphers(): void {
@@ -109,7 +113,8 @@ export function twoTimePadPanel(): HTMLElement {
         const n = Math.max(p1.length, p2.length, 1);
         sharedKey = generateKey(n);
         key2 = generateKey(n);
-        update();
+        // New keys ⇒ a different strip; old pins would decode noise, so clear.
+        update(false);
       },
     }),
   ]);

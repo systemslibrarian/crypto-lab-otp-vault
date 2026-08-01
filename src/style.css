@@ -682,6 +682,12 @@ body {
 
 /* ---- pinned-crib history + undo/redo ---- */
 
+/* Shown when a shortened strip forces individual pins out, so the loss is never
+   silent. Empty (and therefore invisible) the rest of the time. */
+.pin-notice:not(:empty) {
+  margin: 0.5rem 0;
+}
+
 .history-box {
   margin: 0.5rem 0;
 }

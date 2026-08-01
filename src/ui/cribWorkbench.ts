@@ -33,10 +33,24 @@ export interface WorkbenchOptions {
   tone?: "danger" | "neutral";
 }
 
+export interface RefreshOptions {
+  /**
+   * Keep the pinned cribs across the rebuild. Pass `true` whenever the strip
+   * still means the same thing — editing P1/P2 fires a refresh on every
+   * keystroke, and wiping a learner's reconstruction mid-sentence destroys the
+   * exhibit. Pass `false` (the default) only when the strip genuinely changes
+   * meaning: re-rolling the key/keystream, or loading a different challenge.
+   *
+   * Pins that no longer fit a shortened strip are dropped individually and
+   * reported in the UI — never a silent mass clear.
+   */
+  keepPins?: boolean;
+}
+
 export interface Workbench {
   element: HTMLElement;
-  /** Re-read the strip, clear pins, and rebuild (call when inputs change). */
-  refresh: () => void;
+  /** Re-read the strip and rebuild (call when inputs change). */
+  refresh: (options?: RefreshOptions) => void;
 }
 
 interface PinRecord {
@@ -62,6 +76,9 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   let redo: PinRecord[] = [];
   let recon: Reconstruction = emptyReconstruction(strip.length);
   let showTruth = false;
+  // Set when a shortened strip forces individual pins out; shown until the user
+  // next touches the pins (or the strip is deliberately reset).
+  let pinNotice: string | null = null;
 
   // live refs
   let stripCells: HTMLElement[] = [];
@@ -73,6 +90,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   const offsetReadout = el("span", { class: "offset-readout" });
   const revealBox = el("div", { class: "reveal-box", "aria-live": "polite" });
   const candidatesBox = el("div", { class: "candidates" });
+  const pinNoticeBox = el("div", { class: "pin-notice", "aria-live": "polite" });
   const historyBox = el("div", { class: "history-box" });
   const reconBox = el("div", { class: "recon-block" });
   const truthBox = el("div", { class: "truth-box" });
@@ -139,6 +157,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     stripHost,
     cribControls,
     revealBox,
+    pinNoticeBox,
     historyBox,
     reconBox,
     ...(truthToggle ? [truthToggle] : []),
@@ -298,10 +317,30 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   }
 
   function afterPinsChanged(): void {
+    // The user just acted on the pins, so any earlier "dropped a pin" notice has
+    // been seen and answered.
+    pinNotice = null;
     computeRecon();
+    renderPinNotice();
     renderHistory();
     renderRecon();
     renderTruth();
+  }
+
+  /** A pin only means anything while its whole crib still lies on the strip. */
+  function pinFits(p: PinRecord): boolean {
+    return p.offset >= 0 && p.offset + p.crib.length <= strip.length;
+  }
+
+  function describePin(p: PinRecord): string {
+    const who = p.cribIsP1 ? p1Label : p2Label;
+    return `"${p.cribText.replace(/[^\x20-\x7e]/g, "·")}" → ${who} @ ${p.offset}`;
+  }
+
+  function renderPinNotice(): void {
+    pinNoticeBox.replaceChildren();
+    if (!pinNotice) return;
+    pinNoticeBox.append(statusLine("⚠", pinNotice, "neutral"));
   }
 
   function renderHistory(): void {
@@ -311,9 +350,8 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     if (pins.length === 0) return;
     const list = el("ol", { class: "history-list", "aria-label": "Pinned cribs" });
     pins.forEach((p, i) => {
-      const who = p.cribIsP1 ? p1Label : p2Label;
       const item = el("li", { class: "history-item" }, [
-        el("span", { class: "history-text", text: `"${p.cribText.replace(/[^\x20-\x7e]/g, "·")}" → ${who} @ ${p.offset}` }),
+        el("span", { class: "history-text", text: describePin(p) }),
         el("button", { type: "button", class: "history-remove", "aria-label": `Remove pinned crib ${i + 1}`, text: "✕", onclick: () => removePin(i) }),
       ]);
       list.append(item);
@@ -438,14 +476,34 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     );
   }
 
-  function refresh(): void {
+  function refresh(options: RefreshOptions = {}): void {
     strip = opts.getStrip();
-    pins = [];
-    redo = [];
+
+    if (options.keepPins === true) {
+      // The strip still means the same thing (a text edit), so the learner's
+      // reconstruction survives. Only pins that no longer fit are dropped, and
+      // the drop is announced rather than done behind their back.
+      const dropped = pins.filter((p) => !pinFits(p));
+      pins = pins.filter(pinFits);
+      redo = redo.filter(pinFits);
+      if (dropped.length > 0) {
+        pinNotice =
+          `The strip is now ${strip.length} bytes, so ${dropped.length} pinned crib` +
+          `${dropped.length === 1 ? "" : "s"} no longer ${dropped.length === 1 ? "fits" : "fit"} and ` +
+          `${dropped.length === 1 ? "was" : "were"} dropped: ${dropped.map(describePin).join(", ")}. ` +
+          `Everything else you pinned is still here.`;
+      }
+    } else {
+      pins = [];
+      redo = [];
+      pinNotice = null;
+    }
+
     clampOffset();
     computeRecon();
     buildStrip();
     applyCribShape();
+    renderPinNotice();
     renderHistory();
     renderRecon();
     renderTruth();
