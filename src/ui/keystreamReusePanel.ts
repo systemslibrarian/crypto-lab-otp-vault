@@ -89,7 +89,9 @@ export function keystreamReusePanel(): HTMLElement {
       text: "↻ New (still-reused) keystream",
       onclick: () => {
         keystream = generateKey(Math.max(p1.length, p2.length, 1));
-        // A new keystream is a new strip; old pins would decode noise.
+        // Deliberate clean slate. The strip itself is unchanged — the keystream
+        // cancels out of C1 ⊕ C2 = P1 ⊕ P2 — but a re-roll reads as a new
+        // session, so the attack restarts from nothing.
         update(false);
       },
     }),

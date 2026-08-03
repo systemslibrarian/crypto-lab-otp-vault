@@ -113,7 +113,11 @@ export function twoTimePadPanel(): HTMLElement {
         const n = Math.max(p1.length, p2.length, 1);
         sharedKey = generateKey(n);
         key2 = generateKey(n);
-        // New keys ⇒ a different strip; old pins would decode noise, so clear.
+        // Deliberate clean slate. Note the strip does NOT necessarily move: with
+        // reuse ON, C1 ⊕ C2 = P1 ⊕ P2 whatever key was drawn, so the key cancels
+        // out of it entirely (e2e/claims.spec.ts pins that invariance). With
+        // reuse OFF the residual K ⊕ K₂ does change, and pins would then decode
+        // noise. We clear either way so a re-roll always starts a fresh attack.
         update(false);
       },
     }),
