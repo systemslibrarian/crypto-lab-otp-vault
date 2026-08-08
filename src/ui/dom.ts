@@ -53,7 +53,17 @@ export function byteStrip(
   // The strip scrolls horizontally (never wraps), so it must be keyboard
   // focusable (WCAG 2.1.1 / axe scrollable-region-focusable). It already carries
   // role="list" + aria-label for its accessible name.
-  const cells = el("div", { class: "strip", role: "list", "aria-label": label, tabindex: 0 });
+  // `role="list"` only when there is something in it. axe files an empty list
+  // under `aria-required-children` — it cannot confirm a list's required
+  // `listitem` children when there are none — and an empty list is a lie
+  // anyway. The import panel renders exactly that at first paint: a
+  // reconstruction of a strip that has not been pasted yet.
+  const cells = el("div", {
+    class: "strip",
+    role: bytes.length > 0 ? "list" : "group",
+    "aria-label": label,
+    tabindex: 0,
+  });
   bytes.forEach((value, i) => {
     const view = viewByte(value);
     const isUnknown = opts.unknown?.(i) ?? false;

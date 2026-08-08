@@ -405,7 +405,14 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   }
 
   function buildStrip(): void {
-    const cells = el("div", { class: "strip strip--interactive", role: "list", "aria-label": "Combined strip" });
+    // See dom.ts: an empty `role="list"` cannot satisfy aria-required-children,
+    // and this strip is empty until two ciphertexts have been pasted or a
+    // challenge loaded.
+    const cells = el("div", {
+      class: "strip strip--interactive",
+      role: strip.length > 0 ? "list" : "group",
+      "aria-label": "Combined strip",
+    });
     stripCells = [];
     strip.forEach((value, i) => {
       const v = viewByte(value);

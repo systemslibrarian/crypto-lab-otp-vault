@@ -53,7 +53,12 @@
   --danger: #cf222e;
   --danger-bg: #ffebe9;
   --danger-fill: #cf222e; /* #fff on #cf222e ≈ 4.8:1 */
-  --warn: #9a6700;
+  /* Darker than the #9a6700 this used to be. On white that value cleared AA
+     (4.87:1), but the amber ink is painted on the TINTED byte cells — a
+     non-printable glyph inside a --calm-bg or --danger-bg cell — where it
+     measured 4.37:1 and 4.24:1. #8a5a00 clears 5.1:1 on every surface it lands
+     on in this theme. */
+  --warn: #8a5a00;
   --warn-bg: #fff8c5;
   /* Darker blue for accent-as-text on the light (white) surface: #0969da
      clears 4.5:1 where the bright #6ea8fe only made ~2.4:1. */
@@ -459,10 +464,15 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
 }
+/* No `opacity` here. These captions are 0.55rem --text-dim already; the extra
+   0.7 fade put every byte index on the page between 4.45:1 and 1.71:1 depending
+   on which cell tint it sat in, in BOTH themes — hundreds of nodes at a time,
+   invisible to any gate that injects `opacity: 1` before scanning. At full
+   strength --text-dim measures 6.4:1 or better on every surface a byte cell
+   takes. */
 .byte__idx {
   font-size: 0.55rem;
   color: var(--text-dim);
-  opacity: 0.7;
 }
 .byte--np .byte__glyph {
   color: var(--warn);
@@ -474,8 +484,14 @@ body {
   border-color: var(--calm);
   background: var(--calm-bg);
 }
+/* "Not yet recovered" is carried by the dashed border, the `··` hex placeholder
+   and the `?` glyph — three cues, none of them colour alone. The `opacity: 0.5`
+   that used to be here was a fourth, and it was the one that made the other
+   three unreadable: it multiplied with the cell's own tint to put the hex at
+   2.24:1 and the index at 1.71:1 in light theme. A distinct surface says the
+   same thing without touching the ink. */
 .byte--unknown {
-  opacity: 0.5;
+  background: var(--surface-2);
   border-style: dashed;
 }
 .byte--hl {
@@ -643,9 +659,11 @@ body {
   color: var(--calm);
   font-weight: 700;
 }
+/* The `·` stand-in for a non-printable byte is already distinguished by the
+   glyph itself and by --warn; the extra 0.8 fade took it to 4.42:1 in dark and
+   3.13:1 in light. Without it the same amber measures 5.9:1 and 5.3:1. */
 .reveal-cell--np {
   color: var(--warn);
-  opacity: 0.8;
 }
 
 /* ---- status lines (icon + text + color, never color alone) ---- */
