@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { boot, driveAllStates, NARROW } from "./gate";
+import { boot, driveAllStates, expectBaselineNotStale, NARROW } from "./gate";
 
 /**
  * WCAG A/AA regression gate.
@@ -34,3 +34,37 @@ for (const theme of ["dark", "light"] as const) {
     await driveAllStates(page, `${theme} @380px`);
   });
 }
+
+/**
+ * The baseline's third rule: no entry may survive that the lab no longer
+ * produces.
+ *
+ * `nontext-baseline.ts` announces three rules and only two of them were ever
+ * live — `expectBaselineNotStale` was exported from `gate.ts` and imported by
+ * nothing, so a finding that got FIXED kept its entry forever and the file
+ * could only grow. This is that rule's call site.
+ *
+ * It has to drive BOTH themes before it ratchets, and that is measured rather
+ * than chosen. The baseline is one flat set, but this lab's control boundaries
+ * are theme-split: in dark, `button.btn`, `button.btn.btn--icon`,
+ * `button.btn.wt-start` and `button.candidate-btn` clear 3:1 while
+ * `button.btn.btn--pin` and `div.crib-chip` fail; in light it is exactly the
+ * other way round. So a call at the end of any single configuration reports the
+ * other theme's six entries as stale on every run — all four were tried, and
+ * all four failed that way. Only the union of the two themes sees all fourteen.
+ *
+ * Desktop width is enough: the 380px runs surfaced no entry the 1280px runs
+ * missed. And this must be verified by running it ALONE — `nonTextSeen` is
+ * module state, so under `--workers=1` a wrongly-placed call would free-ride on
+ * the tests above and look sound.
+ */
+test("the non-text baseline holds no entry this lab no longer produces", async ({
+  page,
+}) => {
+  test.setTimeout(900_000);
+  for (const theme of ["dark", "light"] as const) {
+    await boot(page, theme);
+    await driveAllStates(page, `${theme} / baseline staleness sweep`);
+  }
+  expectBaselineNotStale();
+});
