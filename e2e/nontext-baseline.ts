@@ -18,11 +18,7 @@ export const NONTEXT_BASELINE: Record<
   { ratio: number; required: number; unverified: boolean }
 > = {
   "control-boundary|a.cl-btn": { ratio: 2.13, required: 3.0, unverified: false },
-  "control-boundary|button.btn": { ratio: 2.16, required: 3.0, unverified: false },
-  "control-boundary|button.btn.btn--icon": { ratio: 2.25, required: 3.0, unverified: false },
   "control-boundary|button.btn.btn--pin": { ratio: 2.73, required: 3.0, unverified: false },
-  "control-boundary|button.btn.wt-start": { ratio: 2.27, required: 3.0, unverified: false },
-  "control-boundary|button.candidate-btn": { ratio: 2.25, required: 3.0, unverified: false },
   "control-boundary|div.crib-chip": { ratio: 2.46, required: 3.0, unverified: false },
   "control-boundary|input#ps-target.msg-input": { ratio: 1.34, required: 3.0, unverified: false },
   "control-boundary|input.msg-input.crib-input": { ratio: 1.34, required: 3.0, unverified: false },
