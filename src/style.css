@@ -151,6 +151,18 @@ body {
   align-items: center;
   gap: 0.6rem;
 }
+/* The prose beside each swatch has to be a real element, not a loose run of
+   text. Left loose it becomes an ANONYMOUS flex item, and Chromium does not
+   give those the content-based automatic minimum a real item gets: rather than
+   shrinking towards its longest word it held a floor of ~305px here (~338px in
+   the wider sans the CI runner resolves), which the row then had to honour. At
+   380px that dragged the <li> to 347px — 372px on the runner — inside a 324px
+   track, and the document scrolled sideways to 400px: a WCAG 1.4.10 reflow
+   failure. As a real flex item the prose wraps at any width; min-width: 0
+   keeps that true even if an unbreakable token ever lands in it. */
+.legend-text {
+  min-width: 0;
+}
 .legend-swatch {
   flex: 0 0 auto;
   display: inline-flex;

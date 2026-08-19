@@ -45,13 +45,13 @@ intro.innerHTML = `
   </p>
   <ul class="legend" aria-label="How to read this lab">
     <li><span class="legend-swatch legend-swatch--byte" aria-hidden="true">61<br>a</span>
-      Each byte shows <strong>hex</strong> over its <strong>glyph</strong>; a non-printable
-      byte renders as <strong>·</strong> so wrong guesses look like garbage.</li>
+      <span class="legend-text">Each byte shows <strong>hex</strong> over its <strong>glyph</strong>; a non-printable
+      byte renders as <strong>·</strong> so wrong guesses look like garbage.</span></li>
     <li><span class="legend-swatch legend-swatch--calm" aria-hidden="true">✓</span>
-      <strong>Calm / green = the system working</strong> (correct OTP use, exact decrypt).</li>
+      <span class="legend-text"><strong>Calm / green = the system working</strong> (correct OTP use, exact decrypt).</span></li>
     <li><span class="legend-swatch legend-swatch--danger" aria-hidden="true">⛔</span>
-      <strong>Danger / red = the system failing</strong> (key reuse exploited). Recovering
-      the plaintext is the cipher breaking, not a win.</li>
+      <span class="legend-text"><strong>Danger / red = the system failing</strong> (key reuse exploited). Recovering
+      the plaintext is the cipher breaking, not a win.</span></li>
   </ul>
 `;
 
