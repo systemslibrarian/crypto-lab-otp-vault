@@ -141,8 +141,12 @@
     else dedupeBanner();
   })();
 </script>
-    <!-- Part 0 (canonical shared header) is applied here once the catalog
-         shared-header.html snippet is provided; do not hand-build one. -->
+    <!-- THIS LAB OWNS ITS HEADER. There is no shared-header script and no
+         managed block: the fleet-wide push (shared-header.html +
+         reapply-header.py) was retired to crypto-lab/archive/header-rollout/.
+         Edit this copy directly. This comment used to say to wait for a catalog
+         snippet and not to hand-build one -- that tooling is gone, so waiting
+         for it meant waiting forever. -->
     <main id="app"></main>
     <footer class="scripture-footer">
       <p>Related demos:
