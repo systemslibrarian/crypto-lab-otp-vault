@@ -74,6 +74,7 @@ export function otpPanel(): HTMLElement {
 
   const controls = el("div", { class: "controls" }, [
     el("button", {
+      id: "otp-new-key",
       type: "button",
       class: "btn",
       text: "↻ Generate fresh random key",

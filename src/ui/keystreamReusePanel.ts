@@ -49,6 +49,7 @@ export function keystreamReusePanel(): HTMLElement {
     getTruth: () => ({ p1, p2 }),
     tone: "danger",
     labels: { stripTitle: "C1 ⊕ C2  (= P1 ⊕ P2, keystream cancelled)" },
+    idPrefix: "ks",
     initialCrib: "the ",
   });
 
@@ -78,12 +79,15 @@ export function keystreamReusePanel(): HTMLElement {
 
   const p1ta = makeTextarea(p1text, "Plaintext P1", (v) => { p1text = v; update(); });
   const p2ta = makeTextarea(p2text, "Plaintext P2", (v) => { p2text = v; update(); });
+  p1ta.id = "ks-p1";
+  p2ta.id = "ks-p2";
   const msgInputs = el("div", { class: "two-msgs" }, [
     el("div", { class: "msg-field" }, [el("span", { class: "field-label", text: "Plaintext P1" }), p1ta]),
     el("div", { class: "msg-field" }, [el("span", { class: "field-label", text: "Plaintext P2" }), p2ta]),
   ]);
   const keyCtrls = el("div", { class: "controls" }, [
     el("button", {
+      id: "ks-new-keystream",
       type: "button",
       class: "btn",
       text: "↻ New (still-reused) keystream",

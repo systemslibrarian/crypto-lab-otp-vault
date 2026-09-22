@@ -31,6 +31,9 @@ export interface WorkbenchOptions {
   labels?: { p1?: string; p2?: string; stripTitle?: string };
   initialCrib?: string;
   tone?: "danger" | "neutral";
+  /** Prefix for this instance's control ids. Several workbenches share a page, so
+   *  each needs its own (e.g. "ttp" gives ttp-crib-word, ttp-pin, ...). */
+  idPrefix?: string;
 }
 
 export interface RefreshOptions {
@@ -64,6 +67,9 @@ const decoder = new TextDecoder();
 const decode = (b: Bytes) => decoder.decode(b);
 
 export function cribWorkbench(opts: WorkbenchOptions): Workbench {
+  // Instance-scoped ids ("<prefix>-<control>"), so a worksheet can anchor to one
+  // workbench's controls without colliding with the others on the page.
+  const ids = (name: string): { id?: string } => (opts.idPrefix ? { id: `${opts.idPrefix}-${name}` } : {});
   const p1Label = opts.labels?.p1 ?? "P1";
   const p2Label = opts.labels?.p2 ?? "P2";
   const stripTitle = opts.labels?.stripTitle ?? "C1 ⊕ C2  (= P1 ⊕ P2)";
@@ -99,6 +105,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     type: "text",
     class: "msg-input crib-input",
     "aria-label": "Guessed crib word",
+    ...ids("crib-word"),
   }) as HTMLInputElement;
   cribInput.value = decode(crib);
   cribInput.addEventListener("input", () => {
@@ -107,7 +114,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     applyCribShape();
   });
 
-  const targetSel = el("select", { class: "select", "aria-label": "Crib belongs to" }) as HTMLSelectElement;
+  const targetSel = el("select", { class: "select", "aria-label": "Crib belongs to", ...ids("crib-target") }) as HTMLSelectElement;
   targetSel.append(
     el("option", { value: "p1", text: `crib is a guess for ${p1Label}` }),
     el("option", { value: "p2", text: `crib is a guess for ${p2Label}` }),
@@ -117,8 +124,8 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     renderReveal();
   });
 
-  const undoBtn = el("button", { type: "button", class: "btn btn--ghost", text: "↶ Undo pin", onclick: undo }) as HTMLButtonElement;
-  const redoBtn = el("button", { type: "button", class: "btn btn--ghost", text: "↷ Redo", onclick: redoPin }) as HTMLButtonElement;
+  const undoBtn = el("button", { type: "button", class: "btn btn--ghost", text: "↶ Undo pin", onclick: undo, ...ids("undo") }) as HTMLButtonElement;
+  const redoBtn = el("button", { type: "button", class: "btn btn--ghost", text: "↷ Redo", onclick: redoPin, ...ids("redo") }) as HTMLButtonElement;
 
   // Visible label; the input's accessible name comes from its aria-label so we
   // avoid id collisions when several workbenches share a page.
@@ -127,9 +134,9 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     el("div", { class: "crib-row" }, [
       cribInput,
       targetSel,
-      el("button", { type: "button", class: "btn btn--icon", text: "◀", "aria-label": "Nudge offset left", onclick: () => nudge(-1) }),
-      el("button", { type: "button", class: "btn btn--icon", text: "▶", "aria-label": "Nudge offset right", onclick: () => nudge(1) }),
-      el("button", { type: "button", class: "btn btn--pin", text: "📌 Pin crib here", onclick: pinCurrent }),
+      el("button", { type: "button", class: "btn btn--icon", text: "◀", "aria-label": "Nudge offset left", onclick: () => nudge(-1), ...ids("nudge-left") }),
+      el("button", { type: "button", class: "btn btn--icon", text: "▶", "aria-label": "Nudge offset right", onclick: () => nudge(1), ...ids("nudge-right") }),
+      el("button", { type: "button", class: "btn btn--pin", text: "📌 Pin crib here", onclick: pinCurrent, ...ids("pin") }),
       undoBtn,
       redoBtn,
     ]),
@@ -140,7 +147,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   let truthToggle: HTMLElement | null = null;
   let truthCheckbox: HTMLInputElement | null = null;
   if (opts.getTruth) {
-    const cb = el("input", { type: "checkbox" }) as HTMLInputElement;
+    const cb = el("input", { type: "checkbox", ...ids("reveal-truth") }) as HTMLInputElement;
     truthCheckbox = cb;
     cb.addEventListener("change", () => {
       showTruth = cb.checked;
@@ -275,6 +282,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
       const preview = decode(h.revealed).replace(/[^\x20-\x7e]/g, "·");
       candidatesBox.append(
         el("button", {
+          ...ids(`candidate-${h.offset}`),
           type: "button",
           class: "candidate-btn",
           text: `@${h.offset} "${preview}" ${Math.round(h.printableRatio * 100)}%`,
@@ -352,7 +360,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     pins.forEach((p, i) => {
       const item = el("li", { class: "history-item" }, [
         el("span", { class: "history-text", text: describePin(p) }),
-        el("button", { type: "button", class: "history-remove", "aria-label": `Remove pinned crib ${i + 1}`, text: "✕", onclick: () => removePin(i) }),
+        el("button", { type: "button", class: "history-remove", "aria-label": `Remove pinned crib ${i + 1}`, text: "✕", onclick: () => removePin(i), ...ids(`remove-pin-${i + 1}`) }),
       ]);
       list.append(item);
     });
@@ -367,7 +375,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     reconBox.append(
       el("div", { class: "recon-head" }, [
         el("h3", { class: "subhead", text: "Both plaintexts emerge together" }),
-        el("button", { type: "button", class: "btn btn--ghost", text: "Reset reconstruction", onclick: resetAll }),
+        el("button", { type: "button", class: "btn btn--ghost", text: "Reset reconstruction", onclick: resetAll, ...ids("reset") }),
       ]),
       statusLine(
         icon,
@@ -436,6 +444,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     });
 
     chip = el("div", {
+      ...ids("crib-offset"),
       class: "crib-chip",
       tabindex: 0,
       role: "slider",

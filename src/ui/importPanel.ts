@@ -17,14 +17,15 @@ export function importPanel(): HTMLElement {
 
   const status = el("div", { class: "import-status", "aria-live": "polite" });
 
-  const c1ta = el("textarea", { class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 1 (hex)", placeholder: "C1 as hex, e.g. 3f a1 09 ..." }) as HTMLTextAreaElement;
-  const c2ta = el("textarea", { class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 2 (hex)", placeholder: "C2 as hex" }) as HTMLTextAreaElement;
+  const c1ta = el("textarea", { id: "import-c1", class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 1 (hex)", placeholder: "C1 as hex, e.g. 3f a1 09 ..." }) as HTMLTextAreaElement;
+  const c2ta = el("textarea", { id: "import-c2", class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 2 (hex)", placeholder: "C2 as hex" }) as HTMLTextAreaElement;
 
   const workbench: Workbench = cribWorkbench({
     getStrip: () => strip,
     getTruth: () => truth,
     tone: "neutral",
     labels: { stripTitle: "C1 ⊕ C2" },
+    idPrefix: "import",
     initialCrib: " the ",
   });
 
@@ -80,6 +81,7 @@ export function importPanel(): HTMLElement {
     { class: "dataset-row" },
     challenges.map((ch) =>
       el("button", {
+        id: `import-challenge-${ch.id}`,
         type: "button",
         class: `btn btn--ghost dataset-btn dataset-btn--${ch.difficulty}`,
         text: ch.label,

@@ -18,12 +18,24 @@ export const NONTEXT_BASELINE: Record<
   { ratio: number; required: number; unverified: boolean }
 > = {
   "control-boundary|a.cl-btn": { ratio: 2.13, required: 3.0, unverified: false },
-  "control-boundary|button.btn.btn--pin": { ratio: 2.73, required: 3.0, unverified: false },
-  "control-boundary|div.crib-chip": { ratio: 2.46, required: 3.0, unverified: false },
+  "control-boundary|button#import-pin.btn.btn--pin": { ratio: 2.73, required: 3.0, unverified: false },
+  "control-boundary|button#ks-pin.btn.btn--pin": { ratio: 2.73, required: 3.0, unverified: false },
+  "control-boundary|button#ttp-pin.btn.btn--pin": { ratio: 2.73, required: 3.0, unverified: false },
+  "control-boundary|div#import-crib-offset.crib-chip": { ratio: 2.46, required: 3.0, unverified: false },
+  "control-boundary|div#ks-crib-offset.crib-chip": { ratio: 2.46, required: 3.0, unverified: false },
+  "control-boundary|div#ttp-crib-offset.crib-chip": { ratio: 2.46, required: 3.0, unverified: false },
+  "control-boundary|input#import-crib-word.msg-input.crib-input": { ratio: 1.34, required: 3.0, unverified: false },
+  "control-boundary|input#ks-crib-word.msg-input.crib-input": { ratio: 1.34, required: 3.0, unverified: false },
   "control-boundary|input#ps-target.msg-input": { ratio: 1.34, required: 3.0, unverified: false },
-  "control-boundary|input.msg-input.crib-input": { ratio: 1.34, required: 3.0, unverified: false },
+  "control-boundary|input#ttp-crib-word.msg-input.crib-input": { ratio: 1.34, required: 3.0, unverified: false },
+  "control-boundary|textarea#import-c1.msg-input.mono-input": { ratio: 1.34, required: 3.0, unverified: false },
+  "control-boundary|textarea#import-c2.msg-input.mono-input": { ratio: 1.34, required: 3.0, unverified: false },
+  "control-boundary|textarea#ks-p1.msg-input": { ratio: 1.3, required: 3.0, unverified: false },
+  "control-boundary|textarea#ks-p2.msg-input": { ratio: 1.3, required: 3.0, unverified: false },
   "control-boundary|textarea#otp-msg.msg-input": { ratio: 1.34, required: 3.0, unverified: false },
-  "control-boundary|textarea.msg-input": { ratio: 1.3, required: 3.0, unverified: false },
-  "control-boundary|textarea.msg-input.mono-input": { ratio: 1.34, required: 3.0, unverified: false },
-  "generated-content|div.crib-chip::after": { ratio: 1.0, required: 4.5, unverified: true }
+  "control-boundary|textarea#ttp-p1.msg-input": { ratio: 1.3, required: 3.0, unverified: false },
+  "control-boundary|textarea#ttp-p2.msg-input": { ratio: 1.3, required: 3.0, unverified: false },
+  "generated-content|div#import-crib-offset.crib-chip::after": { ratio: 1.0, required: 4.5, unverified: true },
+  "generated-content|div#ks-crib-offset.crib-chip::after": { ratio: 1.0, required: 4.5, unverified: true },
+  "generated-content|div#ttp-crib-offset.crib-chip::after": { ratio: 1.0, required: 4.5, unverified: true }
 };
