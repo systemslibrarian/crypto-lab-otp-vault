@@ -53,6 +53,7 @@ export function twoTimePadPanel(): HTMLElement {
     getTruth: () => ({ p1, p2 }),
     tone: "danger",
     labels: { stripTitle: "C1 ⊕ C2  (= P1 ⊕ P2 when key reused)" },
+    idPrefix: "ttp",
     initialCrib: "the ",
   });
 
@@ -81,7 +82,7 @@ export function twoTimePadPanel(): HTMLElement {
   }
 
   // ---- persistent controls ----
-  const reuseCb = el("input", { type: "checkbox" }) as HTMLInputElement;
+  const reuseCb = el("input", { id: "ttp-reuse-key", type: "checkbox" }) as HTMLInputElement;
   reuseCb.checked = reuseKey;
   const reuseLabelText = el("span");
   const toggle = el("label", { class: "toggle danger-toggle" }, [reuseCb, reuseLabelText]);
@@ -100,12 +101,15 @@ export function twoTimePadPanel(): HTMLElement {
 
   const p1ta = makeTextarea(p1text, "Message P1", (v) => { p1text = v; update(); });
   const p2ta = makeTextarea(p2text, "Message P2", (v) => { p2text = v; update(); });
+  p1ta.id = "ttp-p1";
+  p2ta.id = "ttp-p2";
   const msgInputs = el("div", { class: "two-msgs" }, [
     el("div", { class: "msg-field" }, [el("span", { class: "field-label", text: "Message P1" }), p1ta]),
     el("div", { class: "msg-field" }, [el("span", { class: "field-label", text: "Message P2" }), p2ta]),
   ]);
   const keyCtrls = el("div", { class: "controls" }, [
     el("button", {
+      id: "ttp-reroll-keys",
       type: "button",
       class: "btn",
       text: "↻ Re-roll session keys",

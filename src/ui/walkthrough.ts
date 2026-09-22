@@ -51,9 +51,9 @@ export function walkthrough(): HTMLElement {
   const stepBody = el("p", { class: "wt-body" });
   const progress = el("span", { class: "wt-progress" });
 
-  const backBtn = el("button", { type: "button", class: "btn btn--ghost", text: "← Back", onclick: () => go(index - 1) }) as HTMLButtonElement;
-  const nextBtn = el("button", { type: "button", class: "btn", text: "Next →", onclick: () => go(index + 1) }) as HTMLButtonElement;
-  const closeBtn = el("button", { type: "button", class: "btn btn--ghost wt-close", "aria-label": "Exit walkthrough", text: "✕", onclick: stop });
+  const backBtn = el("button", { id: "walkthrough-back", type: "button", class: "btn btn--ghost", text: "← Back", onclick: () => go(index - 1) }) as HTMLButtonElement;
+  const nextBtn = el("button", { id: "walkthrough-next", type: "button", class: "btn", text: "Next →", onclick: () => go(index + 1) }) as HTMLButtonElement;
+  const closeBtn = el("button", { id: "walkthrough-exit", type: "button", class: "btn btn--ghost wt-close", "aria-label": "Exit walkthrough", text: "✕", onclick: stop });
 
   const panel = el("div", { class: "wt-panel", role: "region", "aria-label": "Guided walkthrough", hidden: true }, [
     el("div", { class: "wt-head" }, [progress, closeBtn]),
@@ -62,7 +62,7 @@ export function walkthrough(): HTMLElement {
     el("div", { class: "wt-controls" }, [backBtn, nextBtn]),
   ]);
 
-  const startBtn = el("button", { type: "button", class: "btn wt-start", text: "▶ Start guided walkthrough", onclick: start });
+  const startBtn = el("button", { id: "walkthrough-start", type: "button", class: "btn wt-start", text: "▶ Start guided walkthrough", onclick: start });
 
   function highlight(id: string): void {
     const target = document.getElementById(id);
