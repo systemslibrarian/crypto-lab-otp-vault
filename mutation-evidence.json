@@ -1,0 +1,68 @@
+[
+  {
+    "name": "lost key bit",
+    "sourceDiff": "diff --git a/src/otp/limits.ts b/src/otp/limits.ts\nindex a3e1abe..f5535ef 100644\n--- a/src/otp/limits.ts\n+++ b/src/otp/limits.ts\n@@ -12,7 +12,7 @@ export function stretch(k: number, kappa: number): number {\n   if (!Number.isInteger(k) || k < 0 || k >= 2 ** kappa) throw new Error('KEY_OUT_OF_RANGE');\n   if (kappa === 0) return 0;\n   let out = 0;\n-  for (let i = 0; i < 8; i++) out = (out << 1) | ((k >> (kappa - 1 - i % kappa)) & 1);\n+  for (let i = 0; i < 8; i++) out = (out << 1) | (i % kappa === kappa - 1 ? 0 : ((k >> (kappa - 1 - i % kappa)) & 1));\n   return out;\n }\n export function reachable(c: number, kappa: number): Set<number> {\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "b017101de8f39acbb63494734d4c2a89846d1b9e51ea2e564f7f794a40e380e9",
+    "namedTest": "enumerated key images are injective",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  },
+  {
+    "name": "both reachable counted as win",
+    "sourceDiff": "diff --git a/src/otp/limits.ts b/src/otp/limits.ts\nindex a3e1abe..69f12a4 100644\n--- a/src/otp/limits.ts\n+++ b/src/otp/limits.ts\n@@ -36,7 +36,7 @@ export function privKExact(m0: number, m1: number, kappa: number): Rational {\n   for (const b of [0, 1]) for (const pad of pads) {\n     const c = (b === 0 ? m0 : m1) ^ pad;\n     const has0 = image.has(c ^ m0), has1 = image.has(c ^ m1);\n-    if (has0 === has1) halfWins += 1;\n+    if (has0 === has1) halfWins += 2;\n     else if ((has0 ? 0 : 1) === b) halfWins += 2;\n   }\n   return rational(BigInt(halfWins), BigInt(4 * pads.length));\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "ba4ff04fb4184f1d69e1528c344a3c88a93dcbf6be83a6bfc83711340b0f87f3",
+    "namedTest": "every distinct full-byte pair",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  },
+  {
+    "name": "floating tolerance in V2",
+    "sourceDiff": "diff --git a/src/otp/limits.ts b/src/otp/limits.ts\nindex a3e1abe..fc278f6 100644\n--- a/src/otp/limits.ts\n+++ b/src/otp/limits.ts\n@@ -88,7 +88,7 @@ export function lemma25(table: Table, weights: bigint[]): boolean {\n   for (let k = 0; k < 4; k++) for (let m = 0; m < 4; m++) mass[m][table[k][m]] += weights[k];\n   // All rows have the same denominator, so compare their integer numerators.\n   for (let m = 1; m < 4; m++) for (let c = 0; c < 4; c++) {\n-    if (mass[m][c] !== mass[0][c]) return false;\n+    if (Math.abs(Number(mass[m][c] - mass[0][c]) / Number(weights.reduce((a,b)=>a+b,0n))) > 1e-8) return false;\n   }\n   return true;\n }\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "9efb66049fe847c3fa6b5a2085ed19d2066b4e7b307f533fd696793b33f7ca98",
+    "namedTest": "independent Shannon conditions agree",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  },
+  {
+    "name": "short key painted calm",
+    "sourceDiff": "diff --git a/src/ui/limitsPanel.ts b/src/ui/limitsPanel.ts\nindex 2cbbc89..57106c1 100644\n--- a/src/ui/limitsPanel.ts\n+++ b/src/ui/limitsPanel.ts\n@@ -77,7 +77,7 @@ export function limitsPanel(): HTMLElement {\n       el('p',{id:'limits-cipher',text:`Fixed ciphertext c = ${hex(c)}; κ = ${kappa}. ${kappa===0?'No key at all: c = m.':'Repeating-key XOR: repeat the κ key bits to fill one byte.'}`,'data-cipher':c}),\n       el('p',{id:'limits-count',text:`|M(c)| = ${candidates.size} of 256, counted by trying every key. Cross-check: 2^${kappa} = ${2**kappa}.`}),\n       el('p',{id:'limits-posterior',text:`Uniform prior: 1/256. Posterior: 1/${candidates.size} on possible messages; 0 on ruled-out messages.`}),\n-      verdict('limits-secrecy',kappa===8?'Perfectly secret (Theorem 2.10), with a uniform one-use key.':`Not perfectly secret — ${256-candidates.size} of 256 messages ruled out.`, kappa === 8),\n+      verdict('limits-secrecy',kappa===8?'Perfectly secret (Theorem 2.10), with a uniform one-use key.':`Not perfectly secret — ${256-candidates.size} of 256 messages ruled out.`, true),\n     );\n     negative.replaceChildren();\n     if(kappa===4) {\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "651e4a4ac8542c38868b0059283a04e3cab28718f52afe8613856b2ff6e0f16a",
+    "namedTest": "limits grid and secrecy verdict",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  },
+  {
+    "name": "wrong period two weight",
+    "sourceDiff": "diff --git a/src/otp/limits.ts b/src/otp/limits.ts\nindex a3e1abe..e66eebb 100644\n--- a/src/otp/limits.ts\n+++ b/src/otp/limits.ts\n@@ -47,7 +47,7 @@ export function vigenereExample28(): Rational {\n   for (const b of [0, 1]) for (const period of [1, 2]) {\n     for (let k0 = 0; k0 < 26; k0++) for (let k1 = 0; k1 < (period === 1 ? 1 : 26); k1++) {\n       // Common denominator: period 1 has 26 keys, period 2 has 676.\n-      const weight = period === 1 ? 26n : 1n;\n+      const weight = period === 1 ? 26n : 26n;\n       const c0 = k0, c1 = (b + (period === 1 ? k0 : k1)) % 26;\n       total += weight;\n       if ((c0 === c1 ? 0 : 1) === b) wins += weight;\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "14396473c92f07465aed37a7732142950ac7746a6fe15988334428f5656d5c52",
+    "namedTest": "Katz Lindell Example 2.8",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  },
+  {
+    "name": "missing negative claim",
+    "sourceDiff": "diff --git a/src/ui/limitsPanel.ts b/src/ui/limitsPanel.ts\nindex 2cbbc89..d90a7ce 100644\n--- a/src/ui/limitsPanel.ts\n+++ b/src/ui/limitsPanel.ts\n@@ -4,7 +4,7 @@ import { generateKey, encrypt, textToBytes } from '../otp/otp.ts';\n import { stretch, reachable, posterior, privKExact, vigenereExample28, shannonConditions, lemma25, PRESETS, parseWeight, uniformCiphertextFixture } from '../otp/limits.ts';\n import { format, rational, compare } from '../otp/rational.ts';\n \n-export const LIMITS_NEGATIVE_CLAIM = 'Ciphertexts that look uniformly random do not make a scheme perfectly secret.';\n+export const LIMITS_NEGATIVE_CLAIM = '';\n /** A real random message encrypted under a real random key, including κ = 8 OTP. */\n export function newLimitsCiphertext(kappa: number): number {\n   const message = generateKey(1);\n",
+    "baseline": "af8aad7a31589ca05cc0b144b082281beb30e5fb8d1ebc055a1dcba75f5d3788",
+    "mutant": "8489eb4e152468a16fb6dcd7de4dc2abab645ef2fdb2989640c11b7f2422b97e",
+    "namedTest": "limits negative fixture",
+    "assertionFailure": true,
+    "retries": 0,
+    "servedAssetGuard": true,
+    "restoredGreen": true
+  }
+]

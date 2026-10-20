@@ -13,10 +13,15 @@ attacker's computing power. Its fatal practical weakness, shown here in full, is
 guarantee collapses the instant a key is reused, the key must be as long as the message,
 and it must be exchanged securely in advance.
 
+Panel 2b shows why the key space must be at least as large as the message space
+(Katz–Lindell Theorem 2.11), exact indistinguishability games, and Shannon's
+characterisation of perfect secrecy (Theorem 2.12). Shortened repeating-key XOR
+can produce uniformly distributed ciphertexts while ruling out most messages.
+
 ## When to Use It
 
 - **Theoretical baseline / teaching.** The OTP is the reference point for what "perfect
-  secrecy" means — every other cipher is judged against it, so it is the right tool for
+  secrecy" means — a useful baseline for comparing security definitions and
   building intuition.
 - **Ultra-high-value, low-volume channels with pre-shared key material.** When two parties
   can securely exchange truly random key material in advance (historically, diplomatic and
@@ -52,7 +57,7 @@ are never stored or sent.
 ## Real-World Usage
 
 - Historically used for the highest-value diplomatic and intelligence links, including one-time-pad systems and the Moscow–Washington hotline.
-- The reference standard for "perfect secrecy" against which every other cipher is taught and judged.
+- A reference example of perfect secrecy; the addition-mod-4 preset also achieves it.
 - Understanding OTP key reuse directly explains nonce-reuse disasters in modern stream ciphers and AEAD.
 - Crib dragging and key-reuse analysis remain practical cryptanalysis techniques against misused keystream ciphers.
 
@@ -64,6 +69,10 @@ cd crypto-lab-otp-vault
 npm install
 npm run dev
 ```
+
+Run `npm test` for the arithmetic checks, `npm run test:a11y` for the browser
+claims and accessibility gate, and `npm run test:mutations` for the six concrete
+Panel 2b fault checks (from a clean committed baseline).
 
 ## Related Demos
 

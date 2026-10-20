@@ -114,6 +114,9 @@ export async function boot(page: Page, theme: 'dark' | 'light'): Promise<void> {
   // All five panels render on load; the walkthrough is the half of the page
   // that does not, and its start button is what a reader actually sees.
   await expect(page.locator('#panel-otp')).toBeVisible();
+  await expect(page.locator('#panel-limits')).toBeVisible();
+  await expect(page.locator('#limits-grid')).toHaveCount(1);
+  await expect(page.locator('#panel-limits details[open]')).toHaveCount(0);
   await expect(page.locator('#panel-import')).toBeVisible();
   await expect(page.locator('.wt-start')).toBeVisible();
   await expect(page.locator('.wt-panel')).toBeHidden();
@@ -345,6 +348,17 @@ export async function driveAllStates(page: Page, theme: string): Promise<void> {
   const scanAt = (s: string): Promise<void> => scan(page, `${theme} / ${s}`);
 
   await scanAt('first paint');
+  await page.locator('#limits-kappa').fill('4');
+  await page.locator('#limits-kappa').dispatchEvent('input');
+  await page.locator('#limits-compute').click();
+  await scanAt('limits: shortened key and exact game');
+  await page.locator('#limits-example').click();
+  await page.locator('[data-preset="1"]').click();
+  await scanAt('limits: Vigenere and biased table');
+  await page.getByLabel('Key 0, message 1', {exact:true}).selectOption('0');
+  await page.locator('#limits-verify').click();
+  await page.locator('#limits-target').fill('😀');
+  await scanAt('limits: invalid table and multibyte target');
 
   await page.locator('a.cl-skip-link').focus();
   await scanAt('shared skip link focused');

@@ -1,6 +1,7 @@
 import "./style.css";
 import { otpPanel } from "./ui/otpPanel.ts";
 import { perfectSecrecyPanel } from "./ui/perfectSecrecyPanel.ts";
+import { limitsPanel } from "./ui/limitsPanel.ts";
 import { twoTimePadPanel } from "./ui/twoTimePadPanel.ts";
 import { keystreamReusePanel } from "./ui/keystreamReusePanel.ts";
 import { importPanel } from "./ui/importPanel.ts";
@@ -27,7 +28,7 @@ hero.innerHTML = `
   <aside class="cl-hero-why" aria-label="Why it matters">
     <span class="cl-hero-why-label">WHY IT MATTERS</span>
     <p class="cl-hero-why-text">
-      The one-time pad is the only cipher proven unbreakable — but that guarantee dies
+      The one-time pad achieves provable perfect secrecy with a truly random key as long as the message — but that guarantee dies
       the instant a key is used twice. Keystream reuse has sunk real systems (VENONA, WEP,
       broken RNGs), turning "perfect" secrecy into a crib-dragging exercise.
     </p>
@@ -69,6 +70,7 @@ app.append(
   walkthrough(),
   otpPanel(),
   perfectSecrecyPanel(),
+  limitsPanel(),
   twoTimePadPanel(),
   keystreamReusePanel(),
   importPanel(),

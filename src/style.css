@@ -899,3 +899,23 @@ button.btn--ghost:disabled {
     padding-top: 2.1rem;
   }
 }
+/* Panel 2b: exact finite spaces remain readable in a keyboard-accessible scroller. */
+#panel-limits { min-width: 0; overflow-wrap: anywhere; }
+#panel-limits a { color: var(--accent-text); text-decoration: underline; }
+#panel-limits .msg-input { border-color: var(--border-strong); }
+#panel-limits h3 { margin-top: 1.8rem; }
+#limits-kappa { width: min(100%, 26rem); accent-color: var(--accent); }
+#limits-key-label { display: block; }
+.limits-scroll { max-width: 100%; overflow-x: auto; margin: 1rem 0; }
+.limits-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.limits-scroll table { border-collapse: collapse; text-align: center; width: 100%; }
+.limits-scroll caption { text-align: left; margin-bottom: .5rem; }
+.limits-scroll td, .limits-scroll th { border: 1px solid var(--border-strong); padding: .3rem; }
+#limits-grid { min-width: 34rem; font-family: var(--mono); }
+.limits-possible { background: var(--surface); color: var(--text); }
+.limits-excluded { color: var(--danger); background: var(--danger-bg); }
+#limits-encryption { min-width: 26rem; }
+#limits-encryption th:first-child { min-width: 6rem; }
+#limits-encryption input, #limits-encryption select { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); padding: .4rem; font: inherit; }
+#limits-encryption input { width: 6rem; }
+.limits-verdicts { display: flex; gap: .8rem; flex-wrap: wrap; }

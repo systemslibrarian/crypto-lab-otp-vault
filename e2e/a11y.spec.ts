@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { boot, driveAllStates, expectBaselineNotStale, NARROW } from "./gate";
+import { boot, driveAllStates, expectBaselineNotStale, NARROW, scan } from "./gate";
 
 /**
  * WCAG A/AA regression gate.
@@ -67,4 +67,17 @@ test("the non-text baseline holds no entry this lab no longer produces", async (
     await driveAllStates(page, `${theme} / baseline staleness sweep`);
   }
   expectBaselineNotStale();
+});
+
+
+test('limits accessible at 320px across exact results and errors', async ({page}) => {
+  test.setTimeout(240000); await page.setViewportSize({width:320,height:900}); await boot(page,'dark');
+  await scan(page,'limits full key @320px');
+  await page.locator('#limits-kappa').focus();await page.locator('#limits-kappa').press('Home');
+  await scan(page,'limits no key @320px');
+  await page.locator('#limits-kappa').fill('4');await page.locator('#limits-kappa').dispatchEvent('input');
+  await page.locator('#limits-compute').click();await scan(page,'limits negative and winning pair @320px');
+  await page.locator('#limits-example').click();await page.locator('[data-preset="2"]').click();await scan(page,'limits Vigenere and duplicate maps @320px');
+  await page.locator('[data-preset="3"]').click();await scan(page,'limits perfectly secret addition @320px');
+  await page.locator('#limits-target').fill('😀');await page.getByLabel('Weight of key 0',{exact:true}).fill('-1');await page.locator('#limits-verify').click();await scan(page,'limits errors @320px');
 });

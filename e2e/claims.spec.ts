@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 /**
@@ -29,7 +30,14 @@ test.beforeEach(async ({ page }) => {
   (test.info() as unknown as { _pageErrors: string[] })._pageErrors = guardPageErrors(page);
 });
 
-test.afterEach(async () => {
+test.afterEach(async ({page}) => {
+  if(process.env.MUTATION_ASSETS){
+    const expected=JSON.parse(process.env.MUTATION_ASSETS) as Record<string,string>;
+    const src=await page.locator('script[type="module"]').getAttribute('src');
+    const response=await page.request.get(src!);
+    const digest=createHash('sha256').update(await response.body()).digest('hex');
+    if(expected[src!.split('/').at(-1)!]!==digest)throw new Error('MUTATION_ASSET_MISMATCH: browser did not serve the expected built bytes');
+  }
   const errors = (test.info() as unknown as { _pageErrors?: string[] })._pageErrors ?? [];
   expect(errors, "page must raise no uncaught exceptions or console errors").toEqual([]);
 });
@@ -714,4 +722,92 @@ test("the guided walkthrough advances, finishes and closes", async ({ page }) =>
   await expect(panel).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
+});
+
+// Panel 2b: independent bit-string repetition and weighted distributions.
+const limitsPad = (k:number,n:number):number => n===0?0:parseInt(k.toString(2).padStart(n,'0').repeat(8).slice(0,8),2);
+async function limitsKappa(page:Page,n:number):Promise<void>{
+  await page.locator('#limits-kappa').fill(String(n));await page.locator('#limits-kappa').dispatchEvent('input');
+}
+async function limitsGrid(page:Page):Promise<Set<number>>{
+  const n=Number(await page.locator('#limits-kappa').inputValue());
+  const c=Number(await page.locator('#limits-cipher').getAttribute('data-cipher'));
+  const expected=new Set(Array.from({length:2**n},(_,k)=>c^limitsPad(k,n)));
+  const actual=await page.locator('#limits-grid td[data-possible="true"]').evaluateAll(es=>es.map(e=>Number(e.getAttribute('data-byte'))));
+  expect(new Set(actual)).toEqual(expected);
+  await expect(page.locator('#limits-count')).toContainText(`|M(c)| = ${actual.length} of 256`);
+  await expect(page.locator('#limits-posterior')).toContainText(`1/${actual.length} on possible`);
+  for(const cell of await page.locator('#limits-grid td').all()){
+    const m=Number(await cell.getAttribute('data-byte'));
+    await expect(cell).toHaveAttribute('aria-label',`${m.toString(16).padStart(2,'0')} ${expected.has(m)?'possible':'ruled out'}; posterior ${expected.has(m)?actual.length===1?'1':`1/${actual.length}`:'0'}`);
+  }
+  await expect(page.locator('#limits-secrecy')).toHaveClass(n===8?'status status--calm':'status status--danger');
+  return expected;
+}
+
+test('limits grid and secrecy verdict follow every enumerated candidate',async({page})=>{
+  await page.goto('.');await limitsGrid(page);
+  for(const n of [4,0,3]){await limitsKappa(page,n);const candidates=await limitsGrid(page);expect(candidates.size).toBe(2**n);}
+  await page.locator('#limits-target').fill('😀');await expect(page.locator('#limits-target-result')).toContainText('4 bytes');
+  await page.locator('#limits-target').fill('A');
+  const c=Number(await page.locator('#limits-cipher').getAttribute('data-cipher'));
+  const possible=Array.from({length:8},(_,k)=>c^limitsPad(k,3)).includes(65);
+  await expect(page.locator('#limits-target-result')).toContainText(possible?'possible — at least one key':'ruled out — no key');
+});
+
+test('limits exact game matches independent exhaustive trials and retires changed inputs',async({page})=>{
+  await page.goto('.');
+  for(const [n,a,b] of [[8,0,1],[4,0,1],[4,0,17],[0,0,255]]){
+    await limitsKappa(page,n);await page.locator('#limits-m0').fill(a.toString(16).padStart(2,'0'));await page.locator('#limits-m1').fill(b.toString(16).padStart(2,'0'));
+    await expect(page.locator('#limits-game-verdict')).toHaveCount(0);
+    const keys=Array.from({length:2**n},(_,k)=>limitsPad(k,n));let doubledWins=0;
+    for(let bit=0;bit<2;bit++)for(const pad of keys){
+      const c=(bit?b:a)^pad,possibilities=keys.map(k=>c^k),hasA=possibilities.includes(a),hasB=possibilities.includes(b);
+      doubledWins+=hasA===hasB?1:Number((hasA?0:1)===bit)*2;
+    }
+    const fraction=doubledWins===4*keys.length?'1':'1/2';
+    await page.locator('#limits-compute').click();await expect(page.locator('#limits-game-verdict')).toContainText(`= ${fraction} —`);
+    await expect(page.locator('#limits-game-verdict')).toHaveClass(fraction==='1'?'status status--danger':'status status--calm');
+    await page.locator('#limits-kappa').dispatchEvent('input');await expect(page.locator('#limits-game-verdict')).toBeVisible();
+  }
+  await page.locator('#limits-example').click();await expect(page.locator('#limits-game-verdict')).toContainText('= 3/4.');
+  await limitsKappa(page,8);await expect(page.locator('#limits-game-verdict')).toHaveCount(0);await expect(page.locator('#limits-retired')).toContainText('retired');
+  await page.locator('#limits-m0').fill('A');await page.locator('#limits-m1').fill('41');await page.locator('#limits-compute').click();await expect(page.locator('#limits-game')).toContainText('DISTINCT_MESSAGES_REQUIRED');
+});
+
+async function limitsTheorem(page:Page):Promise<boolean>{
+  const t:number[][]=[];const w:bigint[]=[];
+  for(let k=0;k<4;k++){t[k]=[];for(let m=0;m<4;m++)t[k][m]=Number(await page.getByLabel(`Key ${k}, message ${m}`,{exact:true}).inputValue());w[k]=BigInt(await page.getByLabel(`Weight of key ${k}`,{exact:true}).inputValue());}
+  const sum=w.reduce((a,b)=>a+b,0n),hist=Array.from({length:4},()=>[0n,0n,0n,0n]);
+  for(let m=0;m<4;m++)for(let k=0;k<4;k++)hist[m][t[k][m]]+=w[k];
+  const equal=hist.every(row=>row.every((n,c)=>n===hist[0][c]));
+  const fraction=(n:bigint):string=>{let a=n,b=sum;while(b)[a,b]=[b,a%b];return sum/a===1n?String(n/a):`${n/a}/${sum/a}`;};
+  for(let m=0;m<4;m++)await expect(page.locator(`.limits-mass[data-message="${m}"]`)).toHaveText(`Message ${m}: Pr[C = 0, 1, 2, 3] = ${hist[m].map(fraction).join(', ')}.`);
+  for(const id of ['limits-v1','limits-v2']){await expect(page.locator(`#${id}`)).toContainText(equal?'HOLD':'FAIL');await expect(page.locator(`#${id}`)).toHaveClass(equal?'status status--calm':'status status--danger');}
+  return equal;
+}
+
+test('limits Shannon verdicts independently match printed tables and exact weights',async({page})=>{
+  await page.goto('.');
+  for(let i=0;i<4;i++){await page.locator(`[data-preset="${i}"]`).click();expect(await limitsTheorem(page)).toBe([true,false,false,true][i]);}
+  await page.locator('[data-preset="0"]').click();
+  for(let k=0;k<4;k++)await page.getByLabel(`Weight of key ${k}`,{exact:true}).fill(k===1?'10000000000000001':'10000000000000000');
+  await expect(page.locator('#limits-v1')).toHaveCount(0);await expect(page.locator('#limits-theorem')).toContainText('retired');
+  await page.locator('#limits-verify').click();expect(await limitsTheorem(page)).toBe(false);
+  await page.getByLabel('Key 0, message 1',{exact:true}).selectOption('0');await page.locator('#limits-verify').click();await expect(page.locator('#limits-theorem')).toContainText('ROW_NOT_INVERTIBLE: row 0');await expect(page.locator('#limits-v2')).toHaveCount(0);
+  await page.locator('[data-preset="0"]').click();for(let k=0;k<4;k++)await page.getByLabel(`Weight of key ${k}`,{exact:true}).fill('0');
+  await page.locator('#limits-verify').click();await expect(page.locator('#limits-theorem')).toContainText('ALL_WEIGHTS_ZERO');
+  for(const bad of ['-1','1.5']){await page.getByLabel('Weight of key 0',{exact:true}).fill(bad);await page.locator('#limits-verify').click();await expect(page.locator('#limits-theorem')).toContainText('NONNEGATIVE_INTEGER_WEIGHT_REQUIRED');}
+});
+
+test('limits negative fixture passes three checks while uniform ciphertexts exclude 240 messages',async({page})=>{
+  await page.goto('.');await limitsKappa(page,4);
+  const histogram=Array(256).fill(0);let roundTrips=0;
+  for(let k=0;k<16;k++)for(let m=0;m<256;m++){const pad=limitsPad(k,4),c=m^pad;histogram[c]++;roundTrips+=Number((c^pad)===m);}
+  expect(roundTrips).toBe(4096);expect(histogram).toEqual(Array(256).fill(16));
+  for(let i=0;i<3;i++){await expect(page.locator(`#limits-fixture-${i}`)).toContainText('PASS');await expect(page.locator(`#limits-fixture-${i}`)).toHaveClass('status status--calm');}
+  await expect(page.locator('#limits-grid td[data-possible="false"]')).toHaveCount(240);
+  await expect(page.locator('#limits-negative-verdict')).toContainText('CIPHERTEXTS UNIFORM — AND 240 OF 256 MESSAGES RULED OUT');
+  await expect(page.locator('#limits-negative-verdict')).toHaveClass('status status--danger');
+  await expect(page.locator('#limits-negative')).toBeVisible();await expect(page.locator('#limits-negative')).toHaveText('Ciphertexts that look uniformly random do not make a scheme perfectly secret.');
 });
