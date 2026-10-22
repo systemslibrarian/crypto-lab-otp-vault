@@ -919,3 +919,9 @@ button.btn--ghost:disabled {
 #limits-encryption input, #limits-encryption select { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); padding: .4rem; font: inherit; }
 #limits-encryption input { width: 6rem; }
 .limits-verdicts { display: flex; gap: .8rem; flex-wrap: wrap; }
+.prior-controls { display: flex; flex-wrap: wrap; gap: .65rem 1rem; margin: 1rem 0; }
+.prior-controls label { display: grid; gap: .25rem; font-size: .9rem; font-weight: 600; }
+.prior-controls input, #prior-cipher { width: 6rem; max-width: 100%; padding: .45rem; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: .3rem; font: inherit; }
+.prior-controls input[aria-invalid="true"] { border-color: var(--danger); }
+#prior-table { min-width: 36rem; }
+#prior-table caption { max-width: 40rem; }

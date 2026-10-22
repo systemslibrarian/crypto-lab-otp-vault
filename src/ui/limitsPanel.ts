@@ -3,6 +3,7 @@ import { panelShell } from './otpPanel.ts';
 import { generateKey, encrypt, textToBytes } from '../otp/otp.ts';
 import { stretch, reachable, posterior, privKExact, vigenereExample28, shannonConditions, lemma25, PRESETS, parseWeight, uniformCiphertextFixture } from '../otp/limits.ts';
 import { format, rational, compare } from '../otp/rational.ts';
+import { priorComparison } from './priorComparison.ts';
 
 export const LIMITS_NEGATIVE_CLAIM = 'Ciphertexts that look uniformly random do not make a scheme perfectly secret.';
 /** A real random message encrypted under a real random key, including κ = 8 OTP. */
@@ -153,6 +154,7 @@ export function limitsPanel(): HTMLElement {
     el('label',{for:'limits-m0',class:'field-label',text:'Message m₀ (character or two hex digits)'}),m0,el('label',{for:'limits-m1',class:'field-label',text:'Message m₁ (different byte)'}),m1,el('div',{class:'controls'},[compute,example]),game,
     el('p',{class:'help',text:'For repeating-key XOR, the stretched pads form a binary subspace S. The exact result is 1/2 when m₀ XOR m₁ lies in S, and 1 otherwise. This is one adversary for Exercise 2.15, not the book’s solution. The Vigenère preset is a separate two-letter experiment, independent of κ.'}),
     el('h3',{text:'C · Shannon’s theorem'}),el('p',{text:'Theorem 2.12 requires |M| = |K| = |C|; all three sizes are fixed at 4 here. V1 checks equal key weights and exactly one key per (message, ciphertext). V2 independently adds key weights to compare ciphertext distributions for every message (Lemma 2.5).'}),presets,scroller('Editable four-key encryption table',table),verify,checks,
+    priorComparison(),
     el('p',{class:'help'},['Sources: ',el('a',{href:'https://www.cs.umd.edu/~jkatz/imc.html',text:'Katz–Lindell, Introduction to Modern Cryptography, 3rd ed. (2021), Chapter 2'}),'; ',el('a',{href:'https://doi.org/10.1002/j.1538-7305.1949.tb00928.x',text:'Shannon (1949), §10'}),'.']),
   ]});
 }

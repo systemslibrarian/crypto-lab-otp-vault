@@ -17,6 +17,13 @@ Panel 2b shows why the key space must be at least as large as the message space
 (Katz–Lindell Theorem 2.11), exact indistinguishability games, and Shannon's
 characterisation of perfect secrecy (Theorem 2.12). Shortened repeating-key XOR
 can produce uniformly distributed ciphertexts while ruling out most messages.
+Its new **prior/posterior comparison** makes the definition concrete when some
+messages are more likely than others: a fresh, independent, uniform one-time pad
+leaves those prior odds unchanged after observing a ciphertext. A biased fresh
+pad changes the odds; reusing a pad after a known first plaintext/ciphertext pair
+reveals the pad and pins down a second message. These are separate two-bit toy
+models with exact probabilities, not claims that a fresh uniform pad leaks the
+prior or that an unobserved first plaintext would reveal its key.
 
 ## When to Use It
 
@@ -46,10 +53,23 @@ let you import two ciphertexts (or load built-in challenges) and attack them you
 XOR is computed over real bytes in your browser; keys come from `crypto.getRandomValues` and
 are never stored or sent.
 
+In **Panel 2b, section D**, edit four positive message-prior weights and the
+observed two-bit ciphertext. A table compares the prior with three exact
+posteriors: independent uniform pad weights `(1,1,1,1)`, independent biased pad
+weights `(4,1,1,1)`, and reuse after a known first pair `P₁=0, C₁=0`, which
+reveals `K=0`. For the default prior `(8,4,2,1)` and observation `C₂=0`,
+the fresh uniform posterior remains `(8,4,2,1)/15`, the biased posterior is
+`(32,4,2,1)/39`, and the known-pad reuse posterior is `(1,0,0,0)`.
+This extends the conditional-probability treatment in [Boneh and Shoup,
+*A Graduate Course in Applied Cryptography*, version 0.6 (January 2023),
+§2.1.2](https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_6.pdf).
+The biased and reused pad cases are this lab's own examples.
+
 ## What Can Go Wrong
 
 - Key reuse (the two-time pad): XOR of two ciphertexts equals XOR of the two plaintexts, and crib dragging then peels both messages apart — the perfect-secrecy guarantee is gone instantly.
 - Non-random or short keys — reusing a passphrase, or treating PRNG output as a true pad — break the information-theoretic guarantee.
+- A biased key distribution can change the posterior odds even with one use. A nonuniform *message* distribution alone does not do so under a fresh independent uniform pad: perfect secrecy preserves the prior, rather than making all messages equally likely.
 - The same nonce-reuse failure carries directly into stream ciphers (ChaCha20, AES-CTR/GCM), which are an OTP over a generated keystream.
 - No integrity or authentication: an attacker who knows part of the plaintext can flip ciphertext bits to make controlled, undetected changes.
 - Key distribution and storage are the practical killers — the key must be as long as the message, exchanged securely in advance, and destroyed after one use.
