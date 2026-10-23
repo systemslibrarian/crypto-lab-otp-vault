@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { xorEqual, xorWindow } from "./xor.ts";
 import {
   encrypt,
@@ -53,6 +53,32 @@ describe("OTP correctness (invariant 1)", () => {
       const k = generateKey(len);
       expect(k.length).toBe(len);
     }
+  });
+
+  it("fills keys larger than one Web Crypto request without exceeding its quota", () => {
+    const callSizes: number[] = [];
+    const random = vi.spyOn(globalThis.crypto, "getRandomValues").mockImplementation((view) => {
+      const bytes = view as Uint8Array;
+      callSizes.push(bytes.length);
+      bytes.fill(callSizes.length);
+      return view;
+    });
+    try {
+      const key = generateKey(65_537);
+      expect(key).toBeInstanceOf(Uint8Array);
+      expect(key.length).toBe(65_537);
+      expect(callSizes).toEqual([65_536, 1]);
+      expect(key[0]).toBe(1);
+      expect(key[65_536]).toBe(2);
+    } finally {
+      random.mockRestore();
+    }
+  });
+
+  it("rejects invalid key lengths explicitly", () => {
+    expect(() => generateKey(-1)).toThrow(/non-negative safe integer/);
+    expect(() => generateKey(1.5)).toThrow(/non-negative safe integer/);
+    expect(() => generateKey(Number.MAX_SAFE_INTEGER + 1)).toThrow(/non-negative safe integer/);
   });
 });
 
@@ -180,6 +206,21 @@ describe("Reconstruction: pinning a crib fixes BOTH plaintexts", () => {
     expect(recon.p2.slice(0, 4)).toEqual(p2.slice(0, 4));
     expect(recon.known.slice(0, 4)).toEqual([true, true, true, true]);
     expect(recon.known[4]).toBe(false);
+  });
+
+  it("rejects a contradictory overlapping crib instead of silently overwriting bytes", () => {
+    const strip = textToBytes("\u0019\u0004\u0006\u0003");
+    const first = pinCrib(
+      emptyReconstruction(strip.length),
+      strip,
+      textToBytes("the "),
+      0,
+      true,
+    );
+    expect(() => pinCrib(first, strip, textToBytes("xxxx"), 0, true)).toThrow(
+      /conflicting pinned bytes at offset 0/,
+    );
+    expect(first.p1).toEqual(textToBytes("the "));
   });
 });
 

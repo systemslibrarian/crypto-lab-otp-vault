@@ -126,13 +126,16 @@ export function pinCrib(
   };
   for (let i = 0; i < crib.length; i++) {
     const pos = offset + i;
-    if (cribIsP1) {
-      next.p1[pos] = crib[i];
-      next.p2[pos] = revealed[i];
-    } else {
-      next.p2[pos] = crib[i];
-      next.p1[pos] = revealed[i];
+    const proposedP1 = cribIsP1 ? crib[i] : revealed[i];
+    const proposedP2 = cribIsP1 ? revealed[i] : crib[i];
+    if (
+      next.known[pos] &&
+      (next.p1[pos] !== proposedP1 || next.p2[pos] !== proposedP2)
+    ) {
+      throw new Error(`pinCrib: conflicting pinned bytes at offset ${pos}`);
     }
+    next.p1[pos] = proposedP1;
+    next.p2[pos] = proposedP2;
     next.known[pos] = true;
   }
   return next;

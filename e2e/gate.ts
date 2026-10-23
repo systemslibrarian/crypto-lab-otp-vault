@@ -324,7 +324,7 @@ export async function scan(page: Page, label: string): Promise<void> {
  * The five panels are all mounted on load, so the drive is not about revealing
  * them — it is about reaching the states inside them. Every colour this lab
  * teaches with lives in one of those states: `--calm` on the correct-use path,
- * `--danger` on the armed key-reuse toggle and its recovered plaintexts,
+ * `--danger` on the armed key-reuse toggle and its candidate plaintexts,
  * `--warn` on non-printable bytes, and the neutral tone on "your target is the
  * wrong length" and "that isn't valid hex".
  *
@@ -341,7 +341,7 @@ export async function scan(page: Page, label: string): Promise<void> {
  *
  * The crib workbench is driven the way a learner drives it: a crib typed, an
  * offset nudged, a candidate offset taken, the crib pinned (which is the only
- * route to the history list and the recovered-bytes reconstruction), undone,
+ * route to the history list and the pinned-candidate reconstruction), undone,
  * redone, and the instructor truth toggle opened.
  */
 export async function driveAllStates(page: Page, theme: string): Promise<void> {
@@ -449,7 +449,7 @@ export async function driveAllStates(page: Page, theme: string): Promise<void> {
   await expect(bench.locator('.recon-block .status')).toBeVisible();
   await expect(bench.locator('.recon-block .strip')).toHaveCount(2);
   await expect(bench.locator('.byte--unknown').first()).toBeVisible();
-  await scanAt('panel 3: one crib pinned, both plaintexts partly recovered');
+  await scanAt('panel 3: one crib pinned, both candidate plaintexts partly filled');
 
   // The instructor reveal, which is a checkbox away and adds two more strips.
   await bench.locator('.truth-toggle input').check();
