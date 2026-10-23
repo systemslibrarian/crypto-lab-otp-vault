@@ -2,7 +2,12 @@ import { el, statusLine } from "./dom.ts";
 import { panelShell } from "./otpPanel.ts";
 import { combineCiphertexts } from "../otp/cribdrag.ts";
 import { cribWorkbench, type Workbench, type WorkbenchTruth } from "./cribWorkbench.ts";
-import { parseHex, type Bytes } from "../otp/types.ts";
+import {
+  hexByteLength,
+  MAX_DEMO_BYTES,
+  parseHex,
+  type Bytes,
+} from "../otp/types.ts";
 import { buildChallenges, type Challenge } from "../otp/challenges.ts";
 
 // Panel 5 — bring your own ciphertexts. Paste two hex ciphertexts (or load a
@@ -17,8 +22,11 @@ export function importPanel(): HTMLElement {
 
   const status = el("div", { class: "import-status", "aria-live": "polite" });
 
-  const c1ta = el("textarea", { id: "import-c1", class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 1 (hex)", placeholder: "C1 as hex, e.g. 3f a1 09 ..." }) as HTMLTextAreaElement;
-  const c2ta = el("textarea", { id: "import-c2", class: "msg-input mono-input", rows: 2, "aria-label": "Ciphertext 2 (hex)", placeholder: "C2 as hex" }) as HTMLTextAreaElement;
+  // Enough room for 512 tokens in the verbose `0xff, ` form. The byte-count
+  // preflight below remains the authoritative rendering boundary.
+  const maxHexCharacters = MAX_DEMO_BYTES * 6;
+  const c1ta = el("textarea", { id: "import-c1", class: "msg-input mono-input", rows: 2, maxlength: maxHexCharacters, "aria-label": "Ciphertext 1 (hex)", placeholder: "C1 as hex, e.g. 3f a1 09 ..." }) as HTMLTextAreaElement;
+  const c2ta = el("textarea", { id: "import-c2", class: "msg-input mono-input", rows: 2, maxlength: maxHexCharacters, "aria-label": "Ciphertext 2 (hex)", placeholder: "C2 as hex" }) as HTMLTextAreaElement;
 
   const workbench: Workbench = cribWorkbench({
     getStrip: () => strip,
@@ -31,13 +39,24 @@ export function importPanel(): HTMLElement {
 
   function recompute(): void {
     status.replaceChildren();
-    const b1 = parseHex(c1ta.value);
-    const b2 = parseHex(c2ta.value);
-    if (b1 === null || b2 === null) {
+    const n1 = hexByteLength(c1ta.value);
+    const n2 = hexByteLength(c2ta.value);
+    if (n1 === null || n2 === null) {
       strip = new Uint8Array();
-      status.append(statusLine("✕", "One of the inputs is not valid hex (need pairs of 0-9 / a-f; spaces and commas are fine).", "danger"));
+      status.append(statusLine("✕", "One of the inputs is not valid hex (need pairs of 0-9 / a-f; spaces, commas, and token-leading 0x prefixes are fine).", "danger"));
       return;
     }
+    if (n1 > MAX_DEMO_BYTES || n2 > MAX_DEMO_BYTES) {
+      strip = new Uint8Array();
+      const which = n1 > MAX_DEMO_BYTES ? ["C1", n1] : ["C2", n2];
+      status.append(statusLine("✕", `${which[0]} is ${which[1]} bytes; this byte-by-byte exhibit accepts at most ${MAX_DEMO_BYTES} per ciphertext. Shorten it to continue.`, "danger"));
+      return;
+    }
+    const b1 = parseHex(c1ta.value);
+    const b2 = parseHex(c2ta.value);
+    // Length validation above and parsing share one grammar, so null here would
+    // be an internal disagreement rather than user error.
+    if (b1 === null || b2 === null) throw new Error("hex validation disagreement");
     if (b1.length === 0 || b2.length === 0) {
       strip = new Uint8Array();
       status.append(statusLine("ℹ", "Paste two hex ciphertexts, or load a challenge below.", "neutral"));

@@ -4,6 +4,7 @@ import { textToBytes, generateKey, encrypt } from "../otp/otp.ts";
 import { combineCiphertexts } from "../otp/cribdrag.ts";
 import { cribWorkbench, type Workbench } from "./cribWorkbench.ts";
 import type { Bytes } from "../otp/types.ts";
+import { MAX_DEMO_BYTES } from "../otp/types.ts";
 
 // Panel 4 — the SAME failure in real stream ciphers. ChaCha20, AES-CTR and
 // AES-GCM all encrypt as plaintext ⊕ keystream, where the keystream is derived
@@ -23,6 +24,7 @@ export function keystreamReusePanel(): HTMLElement {
   let c1: Bytes = new Uint8Array();
   let c2: Bytes = new Uint8Array();
   let strip: Bytes = new Uint8Array();
+  let inputError: string | null = null;
 
   const cipherOutput = el("div", { class: "ttp-output" });
 
@@ -34,14 +36,27 @@ export function keystreamReusePanel(): HTMLElement {
     return grown;
   }
 
-  function recompute(): void {
+  function recompute(): boolean {
     p1 = textToBytes(p1text);
     p2 = textToBytes(p2text);
+    const oversized = [
+      ["P1", p1.length],
+      ["P2", p2.length],
+    ].find(([, length]) => (length as number) > MAX_DEMO_BYTES);
+    if (oversized) {
+      inputError = `${oversized[0]} is ${oversized[1]} UTF-8 bytes; this byte-by-byte exhibit accepts at most ${MAX_DEMO_BYTES} per message.`;
+      c1 = new Uint8Array();
+      c2 = new Uint8Array();
+      strip = new Uint8Array();
+      return false;
+    }
+    inputError = null;
     keystream = growKeystream(keystream, Math.max(p1.length, p2.length));
     c1 = encrypt(p1, keystream.slice(0, p1.length)); // P1 ⊕ S
     c2 = encrypt(p2, keystream.slice(0, p2.length)); // P2 ⊕ S — SAME S = the bug
     // keystream-reuse extension point: identical combine step as the OTP panel.
     strip = combineCiphertexts(c1, c2);
+    return true;
   }
 
   const workbench: Workbench = cribWorkbench({
@@ -54,6 +69,12 @@ export function keystreamReusePanel(): HTMLElement {
   });
 
   function renderCiphers(): void {
+    if (inputError) {
+      cipherOutput.replaceChildren(
+        statusLine("✕", `${inputError} Shorten it to continue.`, "danger"),
+      );
+      return;
+    }
     cipherOutput.replaceChildren(
       byteStrip("C1 = P1 ⊕ S", c1, { cellClass: () => "cipher" }),
       byteStrip("C2 = P2 ⊕ S  (SAME keystream — reused nonce!)", c2, { cellClass: () => "cipher" }),
@@ -72,9 +93,9 @@ export function keystreamReusePanel(): HTMLElement {
   // thing, so pinned cribs survive; a fresh keystream does not, so that path
   // passes false.
   function update(keepPins = true): void {
-    recompute();
+    const valid = recompute();
     renderCiphers();
-    workbench.refresh({ keepPins });
+    workbench.refresh({ keepPins: valid ? keepPins : false });
   }
 
   const p1ta = makeTextarea(p1text, "Plaintext P1", (v) => { p1text = v; update(); });
@@ -92,6 +113,10 @@ export function keystreamReusePanel(): HTMLElement {
       class: "btn",
       text: "↻ New (still-reused) keystream",
       onclick: () => {
+        if (inputError) {
+          update(false);
+          return;
+        }
         keystream = generateKey(Math.max(p1.length, p2.length, 1));
         // Deliberate clean slate. The strip itself is unchanged — the keystream
         // cancels out of C1 ⊕ C2 = P1 ⊕ P2 — but a re-roll reads as a new
@@ -125,7 +150,7 @@ export function keystreamReusePanel(): HTMLElement {
 }
 
 function makeTextarea(value: string, label: string, onChange: (v: string) => void): HTMLTextAreaElement {
-  const ta = el("textarea", { class: "msg-input", rows: 2, "aria-label": label }) as HTMLTextAreaElement;
+  const ta = el("textarea", { class: "msg-input", rows: 2, maxlength: MAX_DEMO_BYTES, "aria-label": label }) as HTMLTextAreaElement;
   ta.value = value;
   ta.addEventListener("input", () => onChange(ta.value));
   return ta;

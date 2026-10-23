@@ -2,7 +2,6 @@ import { el, byteStrip, statusLine } from "./dom.ts";
 import { panelShell } from "./otpPanel.ts";
 import {
   textToBytes,
-  bytesToText,
   generateKey,
   encrypt,
   decrypt,
@@ -12,8 +11,9 @@ import type { Bytes } from "../otp/types.ts";
 
 // Panel 2 — perfect secrecy. One ciphertext is fixed. The user types ANY target
 // plaintext of the same length; we derive the key k = c ⊕ p that produces it and
-// prove c ⊕ k === p. The "aha": one OTP ciphertext is consistent with every
-// plaintext of its length, so it leaks nothing but length (Shannon 1949).
+// prove c ⊕ k === p. For a fresh independent uniform pad, each matching key
+// has the same probability, so the ciphertext preserves the message prior
+// rather than making all plaintexts equally likely (Shannon 1949).
 
 export function perfectSecrecyPanel(): HTMLElement {
   // Fix a ciphertext once: a real plaintext under a real random key, then we
@@ -57,7 +57,7 @@ export function perfectSecrecyPanel(): HTMLElement {
 
     const k = deriveKey(ciphertext, target); // k = c ⊕ p
     const check = decrypt(ciphertext, k); // c ⊕ k should equal p
-    const valid = bytesToText(check) === bytesToText(target);
+    const valid = check.length === target.length && check.every((byte, i) => byte === target[i]);
 
     output.append(
       byteStrip("Your chosen plaintext  P", target, { cellClass: () => "calm" }),
@@ -68,7 +68,7 @@ export function perfectSecrecyPanel(): HTMLElement {
       valid
         ? statusLine(
             "✓",
-            "This key is genuinely valid: the same ciphertext decrypts to YOUR chosen plaintext under it. No plaintext is any more 'real' than another.",
+            "This key is genuinely valid: the same ciphertext decrypts to YOUR chosen plaintext under it. Because the fresh pad is independent and uniform, observing the ciphertext does not change the prior odds among plaintexts.",
             "calm",
           )
         : statusLine("✕", "Verification failed (should not happen).", "danger"),
@@ -96,7 +96,7 @@ export function perfectSecrecyPanel(): HTMLElement {
       el("p", {
         id: "ps-help",
         class: "help",
-        text: "Because for every guess there exists a key, the ciphertext is consistent with all of them at once — it reveals nothing but its length. That is information-theoretic security (Shannon, 1949).",
+        text: "A matching key exists for every same-length plaintext, and the fresh independent uniform pad gives each corresponding key equal probability. Both facts matter: existence alone would not stop a biased pad from changing the plaintext odds. The ciphertext therefore preserves the prior and reveals nothing but length (Shannon, 1949).",
       }),
       output,
     ],

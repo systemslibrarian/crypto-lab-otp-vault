@@ -4,6 +4,7 @@ import { textToBytes, generateKey, encrypt } from "../otp/otp.ts";
 import { combineCiphertexts } from "../otp/cribdrag.ts";
 import { cribWorkbench, type Workbench } from "./cribWorkbench.ts";
 import type { Bytes } from "../otp/types.ts";
+import { MAX_DEMO_BYTES } from "../otp/types.ts";
 
 // Panel 3 (centerpiece) — the two-time-pad MISTAKE. Two messages under the SAME
 // key. C1 ⊕ C2 = P1 ⊕ P2 (the key cancels). The crib-drag attack itself lives in
@@ -22,6 +23,7 @@ export function twoTimePadPanel(): HTMLElement {
   let c1: Bytes = new Uint8Array();
   let c2: Bytes = new Uint8Array();
   let strip: Bytes = new Uint8Array(); // C1 ⊕ C2
+  let inputError: string | null = null;
 
   const cipherOutput = el("div", { class: "ttp-output" });
 
@@ -33,9 +35,21 @@ export function twoTimePadPanel(): HTMLElement {
     return grown;
   }
 
-  function recompute(): void {
+  function recompute(): boolean {
     p1 = textToBytes(p1text);
     p2 = textToBytes(p2text);
+    const oversized = [
+      ["P1", p1.length],
+      ["P2", p2.length],
+    ].find(([, length]) => (length as number) > MAX_DEMO_BYTES);
+    if (oversized) {
+      inputError = `${oversized[0]} is ${oversized[1]} UTF-8 bytes; this byte-by-byte exhibit accepts at most ${MAX_DEMO_BYTES} per message.`;
+      c1 = new Uint8Array();
+      c2 = new Uint8Array();
+      strip = new Uint8Array();
+      return false;
+    }
+    inputError = null;
     const need = Math.max(p1.length, p2.length);
     sharedKey = growKey(sharedKey, need);
     key2 = growKey(key2, need);
@@ -46,6 +60,7 @@ export function twoTimePadPanel(): HTMLElement {
     // equal-length ciphertexts — the keystreamReusePanel and importPanel feed it
     // the same way.
     strip = combineCiphertexts(c1, c2);
+    return true;
   }
 
   const workbench: Workbench = cribWorkbench({
@@ -62,13 +77,17 @@ export function twoTimePadPanel(): HTMLElement {
   // reconstruction must survive. Only re-rolling the keys changes what the
   // strip is, and that path passes false.
   function update(keepPins = true): void {
-    recompute();
+    const valid = recompute();
     renderCiphers();
-    workbench.refresh({ keepPins });
+    workbench.refresh({ keepPins: valid ? keepPins : false });
   }
 
   function renderCiphers(): void {
     cipherOutput.replaceChildren();
+    if (inputError) {
+      cipherOutput.append(statusLine("✕", `${inputError} Shorten it to continue.`, "danger"));
+      return;
+    }
     cipherOutput.append(
       byteStrip("C1 = P1 ⊕ K", c1, { cellClass: () => "cipher" }),
       byteStrip(reuseKey ? "C2 = P2 ⊕ K  (same K!)" : "C2 = P2 ⊕ K₂  (different key)", c2, { cellClass: () => "cipher" }),
@@ -114,6 +133,10 @@ export function twoTimePadPanel(): HTMLElement {
       class: "btn",
       text: "↻ Re-roll session keys",
       onclick: () => {
+        if (inputError) {
+          update(false);
+          return;
+        }
         const n = Math.max(p1.length, p2.length, 1);
         sharedKey = generateKey(n);
         key2 = generateKey(n);
@@ -152,7 +175,7 @@ export function twoTimePadPanel(): HTMLElement {
 }
 
 function makeTextarea(value: string, label: string, onChange: (v: string) => void): HTMLTextAreaElement {
-  const ta = el("textarea", { class: "msg-input", rows: 2, "aria-label": label }) as HTMLTextAreaElement;
+  const ta = el("textarea", { class: "msg-input", rows: 2, maxlength: MAX_DEMO_BYTES, "aria-label": label }) as HTMLTextAreaElement;
   ta.value = value;
   ta.addEventListener("input", () => onChange(ta.value));
   return ta;

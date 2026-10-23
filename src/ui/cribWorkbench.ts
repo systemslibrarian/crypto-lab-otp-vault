@@ -104,6 +104,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   const cribInput = el("input", {
     type: "text",
     class: "msg-input crib-input",
+    maxlength: 256,
     "aria-label": "Guessed crib word",
     ...ids("crib-word"),
   }) as HTMLInputElement;
@@ -180,10 +181,21 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     offset = offs.length === 0 ? 0 : clamp(offset, offs[0], offs[offs.length - 1]);
   }
 
-  function computeRecon(): void {
+  function computeRecon(): PinRecord[] {
     let r = emptyReconstruction(strip.length);
-    for (const p of pins) r = pinCrib(r, strip, p.crib, p.offset, p.cribIsP1);
+    const accepted: PinRecord[] = [];
+    const conflicting: PinRecord[] = [];
+    for (const p of pins) {
+      try {
+        r = pinCrib(r, strip, p.crib, p.offset, p.cribIsP1);
+        accepted.push(p);
+      } catch {
+        conflicting.push(p);
+      }
+    }
+    pins = accepted;
     recon = r;
+    return conflicting;
   }
 
   function applyCribShape(): void {
@@ -299,7 +311,15 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
   function pinCurrent(): void {
     const offs = validOffsets(strip.length, crib.length);
     if (offs.length === 0) return;
-    pins.push({ cribText: decode(crib), crib: crib.slice(), offset, cribIsP1: cribTarget === "p1" });
+    const nextPin = { cribText: decode(crib), crib: crib.slice(), offset, cribIsP1: cribTarget === "p1" };
+    try {
+      pinCrib(recon, strip, nextPin.crib, nextPin.offset, nextPin.cribIsP1);
+    } catch {
+      pinNotice = `That crib conflicts with bytes already pinned at this offset. Remove or undo the earlier crib before replacing it.`;
+      renderPinNotice();
+      return;
+    }
+    pins.push(nextPin);
     redo = [];
     afterPinsChanged();
   }
@@ -328,7 +348,10 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     // The user just acted on the pins, so any earlier "dropped a pin" notice has
     // been seen and answered.
     pinNotice = null;
-    computeRecon();
+    const conflicting = computeRecon();
+    if (conflicting.length > 0) {
+      pinNotice = `${conflicting.length} pinned crib${conflicting.length === 1 ? "" : "s"} conflicted with the current strip and ${conflicting.length === 1 ? "was" : "were"} dropped: ${conflicting.map(describePin).join(", ")}.`;
+    }
     renderPinNotice();
     renderHistory();
     renderRecon();
@@ -379,7 +402,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
       ]),
       statusLine(
         icon,
-        `${solved} / ${strip.length} bytes recovered in BOTH messages. Each confirmed crib peels a stretch off ${p1Label} AND ${p2Label} at once — this is why key reuse is fatal.`,
+        `${solved} / ${strip.length} byte positions filled in BOTH candidate messages. Each pinned crib is a hypothesis; when the keystream was reused and the crib is correct, it reveals the matching stretch of ${p1Label} AND ${p2Label}.`,
         tone,
       ),
       byteStrip(`Reconstructed ${p1Label}`, recon.p1, { unknown: (i) => !recon.known[i], cellClass: (i) => (recon.known[i] ? "calm" : undefined) }),
@@ -516,7 +539,13 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     }
 
     clampOffset();
-    computeRecon();
+    const conflicting = computeRecon();
+    if (conflicting.length > 0) {
+      const conflictNotice =
+        `${conflicting.length} pinned crib${conflicting.length === 1 ? "" : "s"} conflicted with the current strip and ` +
+        `${conflicting.length === 1 ? "was" : "were"} dropped: ${conflicting.map(describePin).join(", ")}.`;
+      pinNotice = pinNotice ? `${pinNotice} ${conflictNotice}` : conflictNotice;
+    }
     buildStrip();
     applyCribShape();
     renderPinNotice();
