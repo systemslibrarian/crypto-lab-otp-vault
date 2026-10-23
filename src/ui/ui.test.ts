@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { otpPanel } from "./otpPanel.ts";
 import { perfectSecrecyPanel } from "./perfectSecrecyPanel.ts";
 import { twoTimePadPanel } from "./twoTimePadPanel.ts";
+import { MAX_DEMO_BYTES } from "../otp/types.ts";
 
 // End-to-end DOM smoke tests: every panel must mount and the two-time-pad
 // crib-drag must actually peel both plaintexts apart through real UI events.
@@ -29,6 +30,19 @@ describe("panels mount without throwing", () => {
     expect(input).toBeTruthy();
     // Default target is the same length as the fixed ciphertext → valid key shown.
     expect(panel.querySelector(".status--calm")).toBeTruthy();
+    expect(panel.querySelector(".status--calm")?.textContent).toMatch(/does not change the prior odds/i);
+  });
+
+  it("OTP panel rejects an oversized byte exhibit without calling the RNG", () => {
+    const panel = otpPanel();
+    document.body.append(panel);
+    const input = panel.querySelector<HTMLTextAreaElement>("#otp-msg")!;
+    input.value = "a".repeat(MAX_DEMO_BYTES + 1);
+    expect(() => input.dispatchEvent(new Event("input"))).not.toThrow();
+    expect(panel.querySelector(".status--danger")?.textContent).toContain(
+      `accepts at most ${MAX_DEMO_BYTES}`,
+    );
+    expect(panel.querySelectorAll(".panel-output .strip")).toHaveLength(0);
   });
 
   it("Two-time-pad panel starts in the DANGER reuse state", () => {
@@ -60,7 +74,7 @@ describe("two-time-pad crib-drag recovers BOTH plaintexts via the UI", () => {
     expect(glyphs(panel, "Reconstructed P2", 4)).toBe("pack");
 
     const recon = panel.querySelector(".recon-block .status")!;
-    expect(recon.textContent).toMatch(/4 \/ 43 bytes recovered/);
+    expect(recon.textContent).toMatch(/4 \/ 43 byte positions filled in BOTH candidate messages/);
   });
 
   it("turning OFF key reuse makes the attack fail (no real recovery)", () => {
@@ -86,6 +100,16 @@ describe("two-time-pad crib-drag recovers BOTH plaintexts via the UI", () => {
     expect(() => p1ta.dispatchEvent(new Event("input"))).not.toThrow();
     // The overlap strip now spans the shorter message; panel still renders.
     expect(panel.querySelector(".strip--interactive")).toBeTruthy();
+  });
+
+  it("rejects a message above the rendering boundary instead of crashing", () => {
+    const p1ta = panel.querySelector<HTMLTextAreaElement>("textarea")!;
+    p1ta.value = "a".repeat(MAX_DEMO_BYTES + 1);
+    expect(() => p1ta.dispatchEvent(new Event("input"))).not.toThrow();
+    expect(panel.querySelector(".ttp-output .status--danger")?.textContent).toContain(
+      `accepts at most ${MAX_DEMO_BYTES}`,
+    );
+    expect(panel.querySelectorAll('.strip[aria-label="Combined strip"] .byte')).toHaveLength(0);
   });
 
   it("a wrong crib does not reconstruct real text at offset 0", () => {

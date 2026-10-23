@@ -15,8 +15,9 @@ and it must be exchanged securely in advance.
 
 Panel 2b shows why the key space must be at least as large as the message space
 (Katz–Lindell Theorem 2.11), exact indistinguishability games, and Shannon's
-characterisation of perfect secrecy (Theorem 2.12). Shortened repeating-key XOR
-can produce uniformly distributed ciphertexts while ruling out most messages.
+characterisation of perfect secrecy (Theorem 2.12). Under a uniform message
+distribution, shortened repeating-key XOR can produce uniformly distributed
+ciphertexts while ruling out most messages.
 Its new **prior/posterior comparison** makes the definition concrete when some
 messages are more likely than others: a fresh, independent, uniform one-time pad
 leaves those prior odds unchanged after observing a ciphertext. A biased fresh
@@ -91,8 +92,9 @@ npm run dev
 ```
 
 Run `npm test` for the arithmetic checks, `npm run test:a11y` for the browser
-claims and accessibility gate, and `npm run test:mutations` for the six concrete
-Panel 2b fault checks (from a clean committed baseline).
+claims and accessibility gate, and `npm run test:mutations` for the nine concrete
+fault checks spanning Panel 2b, random-key quotas and imported-hex validation
+(from a clean committed baseline).
 
 ## Related Demos
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseHex, bytesToHex } from "./types.ts";
+import { parseHex, bytesToHex, hexByteLength } from "./types.ts";
 import { buildChallenges } from "./challenges.ts";
 import { combineCiphertexts } from "./cribdrag.ts";
 import { xorEqual } from "./xor.ts";
@@ -13,11 +13,15 @@ describe("hex parse/format", () => {
 
   it("tolerates whitespace, commas, and 0x prefixes", () => {
     expect(parseHex("0x3f, a1  09\n0xff")).toEqual(new Uint8Array([0x3f, 0xa1, 0x09, 0xff]));
+    expect(hexByteLength("0x3f, a1  09\n0xff")).toBe(4);
   });
 
-  it("rejects odd-length and non-hex input", () => {
+  it("rejects odd-length, non-hex, and embedded-prefix input", () => {
     expect(parseHex("abc")).toBeNull(); // odd digits
     expect(parseHex("zz")).toBeNull(); // not hex
+    expect(parseHex("aa0xbb")).toBeNull(); // 0x is not a deletion token
+    expect(parseHex("aa,")).toEqual(new Uint8Array([0xaa])); // trailing separator
+    expect(hexByteLength("aa0xbb")).toBeNull();
     expect(parseHex("")).toEqual(new Uint8Array(0)); // empty is valid-empty
   });
 });

@@ -4,6 +4,7 @@ import { twoTimePadPanel } from "./twoTimePadPanel.ts";
 import { keystreamReusePanel } from "./keystreamReusePanel.ts";
 import { importPanel } from "./importPanel.ts";
 import { walkthrough } from "./walkthrough.ts";
+import { MAX_DEMO_BYTES } from "../otp/types.ts";
 
 function glyphs(root: ParentNode, ariaLabel: string, count: number): string {
   const strip = root.querySelector(`[aria-label="${ariaLabel}"]`)!;
@@ -111,6 +112,17 @@ describe("undo / redo / history (#2)", () => {
     expect(panel.querySelector(".history-item")).toBeNull();
     expect(glyphs(panel, "Reconstructed P1", 1)).toBe("?");
   });
+
+  it("refuses a contradictory overlapping pin and names the conflict", () => {
+    pin(panel);
+    const crib = panel.querySelector<HTMLInputElement>(".crib-input")!;
+    crib.value = "xxxx";
+    crib.dispatchEvent(new Event("input"));
+    pin(panel);
+    expect(panel.querySelectorAll(".history-item")).toHaveLength(1);
+    expect(glyphs(panel, "Reconstructed P1", 4)).toBe("the ");
+    expect(panel.querySelector(".pin-notice")?.textContent).toMatch(/conflicts with bytes already pinned/i);
+  });
 });
 
 describe("instructor reveal toggle (#5)", () => {
@@ -139,6 +151,19 @@ describe("keystream-reuse panel (#7)", () => {
     expect(glyphs(panel, "Reconstructed P1", 8)).toBe("transfer");
     expect(glyphs(panel, "Reconstructed P2", 8)).toBe("the nonc");
   });
+
+  it("rejects an oversized message without drawing an unbounded strip", () => {
+    document.body.innerHTML = "";
+    const panel = keystreamReusePanel();
+    document.body.append(panel);
+    const input = panel.querySelector<HTMLTextAreaElement>("#ks-p1")!;
+    input.value = "a".repeat(MAX_DEMO_BYTES + 1);
+    expect(() => input.dispatchEvent(new Event("input"))).not.toThrow();
+    expect(panel.querySelector(".ttp-output .status--danger")?.textContent).toContain(
+      `accepts at most ${MAX_DEMO_BYTES}`,
+    );
+    expect(panel.querySelectorAll('.strip[aria-label="Combined strip"] .byte')).toHaveLength(0);
+  });
 });
 
 describe("import panel (#6)", () => {
@@ -154,6 +179,17 @@ describe("import panel (#6)", () => {
     c1.value = "nothex!!";
     c1.dispatchEvent(new Event("input"));
     expect(panel.querySelector(".import-status .status--danger")).toBeTruthy();
+  });
+
+  it("rejects an oversized ciphertext before allocating or rendering its bytes", () => {
+    const [c1, c2] = panel.querySelectorAll<HTMLTextAreaElement>(".mono-input");
+    c1.value = "00 ".repeat(MAX_DEMO_BYTES + 1).trim();
+    c2.value = "00";
+    expect(() => c1.dispatchEvent(new Event("input"))).not.toThrow();
+    expect(panel.querySelector(".import-status .status--danger")?.textContent).toContain(
+      `accepts at most ${MAX_DEMO_BYTES}`,
+    );
+    expect(panel.querySelectorAll('.strip[aria-label="Combined strip"] .byte')).toHaveLength(0);
   });
 
   it("editing a ciphertext after a challenge load clears the reveal toggle", () => {
