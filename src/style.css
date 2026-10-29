@@ -925,3 +925,18 @@ button.btn--ghost:disabled {
 .prior-controls input[aria-invalid="true"] { border-color: var(--danger); }
 #prior-table { min-width: 36rem; }
 #prior-table caption { max-width: 40rem; }
+
+/* The copy button's glyphs, drawn here rather than written as DOM text. See
+   the note in src/ui/dom.ts: aria-hidden would not satisfy the rule. */
+.copy-btn::before { content: "\29C9\00A0"; }
+.copy-btn[data-face="done"]::before { content: "\2713\00A0"; }
+.copy-btn[data-face="error"]::before { content: ""; }
+
+/* The nudge arrows, drawn here rather than written as DOM text, so each
+   button's aria-label is its whole accessible name. See src/ui/dom.ts. */
+.btn--nudge-left::before { content: "\25C0"; }
+.btn--nudge-right::before { content: "\25B6"; }
+
+.wt-close::before { content: "\2715"; }
+
+.history-remove::before { content: "\2715"; }

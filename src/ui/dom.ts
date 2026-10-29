@@ -91,20 +91,28 @@ export function byteStrip(
 }
 
 function copyButton(label: string, bytes: Bytes): HTMLElement {
-  const btn = el("button", {
-    class: "copy-btn",
-    type: "button",
-    "aria-label": `Copy ${label} as hex`,
-    text: "⧉ copy hex",
-  });
+  // The name opens with the words on the button and moves with them, and the
+  // glyphs are drawn from CSS rather than written as text. Both are needed:
+  // axe 4.14's label-content-name-mismatch (WCAG 2.5.3 Label in Name) compares
+  // the accessible name against everything a SIGHTED user sees, so "copy hex"
+  // had to appear in a name that said "Copy <field> as hex", and the leading
+  // U+29C9 had to stop being DOM text -- marking it aria-hidden would not help,
+  // since that hides it from the name while leaving it visible.
+  const setFace = (b: HTMLElement, word: string, state: string): void => {
+    b.textContent = word;
+    b.dataset.face = state;
+    b.setAttribute("aria-label", `${word}: ${label} as hex`);
+  };
+  const btn = el("button", { class: "copy-btn", type: "button" }) as HTMLElement;
+  setFace(btn, "copy hex", "idle");
   btn.addEventListener("click", async () => {
     const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(" ");
     try {
       await navigator.clipboard.writeText(hex);
-      btn.textContent = "✓ copied";
-      window.setTimeout(() => (btn.textContent = "⧉ copy hex"), 1200);
+      setFace(btn, "copied", "done");
+      window.setTimeout(() => setFace(btn, "copy hex", "idle"), 1200);
     } catch {
-      btn.textContent = "copy failed";
+      setFace(btn, "copy failed", "error");
     }
   });
   return btn;

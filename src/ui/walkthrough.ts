@@ -53,7 +53,7 @@ export function walkthrough(): HTMLElement {
 
   const backBtn = el("button", { id: "walkthrough-back", type: "button", class: "btn btn--ghost", text: "← Back", onclick: () => go(index - 1) }) as HTMLButtonElement;
   const nextBtn = el("button", { id: "walkthrough-next", type: "button", class: "btn", text: "Next →", onclick: () => go(index + 1) }) as HTMLButtonElement;
-  const closeBtn = el("button", { id: "walkthrough-exit", type: "button", class: "btn btn--ghost wt-close", "aria-label": "Exit walkthrough", text: "✕", onclick: stop });
+  const closeBtn = el("button", { id: "walkthrough-exit", type: "button", class: "btn btn--ghost wt-close", "aria-label": "Exit walkthrough", onclick: stop });
 
   const panel = el("div", { class: "wt-panel", role: "region", "aria-label": "Guided walkthrough", hidden: true }, [
     el("div", { class: "wt-head" }, [progress, closeBtn]),

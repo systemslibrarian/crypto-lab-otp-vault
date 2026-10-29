@@ -134,8 +134,8 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     el("div", { class: "crib-row" }, [
       cribInput,
       targetSel,
-      el("button", { type: "button", class: "btn btn--icon", text: "◀", "aria-label": "Nudge offset left", onclick: () => nudge(-1), ...ids("nudge-left") }),
-      el("button", { type: "button", class: "btn btn--icon", text: "▶", "aria-label": "Nudge offset right", onclick: () => nudge(1), ...ids("nudge-right") }),
+      el("button", { type: "button", class: "btn btn--icon btn--nudge-left", "aria-label": "Nudge offset left", onclick: () => nudge(-1), ...ids("nudge-left") }),
+      el("button", { type: "button", class: "btn btn--icon btn--nudge-right", "aria-label": "Nudge offset right", onclick: () => nudge(1), ...ids("nudge-right") }),
       el("button", { type: "button", class: "btn btn--pin", text: "📌 Pin crib here", onclick: pinCurrent, ...ids("pin") }),
       undoBtn,
       redoBtn,
@@ -360,7 +360,7 @@ export function cribWorkbench(opts: WorkbenchOptions): Workbench {
     pins.forEach((p, i) => {
       const item = el("li", { class: "history-item" }, [
         el("span", { class: "history-text", text: describePin(p) }),
-        el("button", { type: "button", class: "history-remove", "aria-label": `Remove pinned crib ${i + 1}`, text: "✕", onclick: () => removePin(i), ...ids(`remove-pin-${i + 1}`) }),
+        el("button", { type: "button", class: "history-remove", "aria-label": `Remove pinned crib ${i + 1}`, onclick: () => removePin(i), ...ids(`remove-pin-${i + 1}`) }),
       ]);
       list.append(item);
     });
