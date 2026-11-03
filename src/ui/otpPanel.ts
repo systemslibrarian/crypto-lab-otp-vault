@@ -7,6 +7,7 @@ import {
   decrypt,
 } from "../otp/otp.ts";
 import type { Bytes } from "../otp/types.ts";
+import { MAX_DEMO_BYTES } from "../otp/types.ts";
 
 // Panel 1 — the correct OTP path: fresh random key per message (key length ==
 // message length), byte-by-byte XOR, and an exact decrypt. Reads CALM/green
@@ -20,6 +21,7 @@ export function otpPanel(): HTMLElement {
     id: "otp-msg",
     class: "msg-input",
     rows: 2,
+    maxlength: MAX_DEMO_BYTES,
     "aria-describedby": "otp-msg-help",
   }) as HTMLTextAreaElement;
   input.value = "HELLO ONE-TIME PAD";
@@ -28,6 +30,16 @@ export function otpPanel(): HTMLElement {
 
   function render(): void {
     output.replaceChildren();
+    if (message.length > MAX_DEMO_BYTES) {
+      output.append(
+        statusLine(
+          "✕",
+          `Message is ${message.length} UTF-8 bytes; this byte-by-byte exhibit accepts at most ${MAX_DEMO_BYTES}. Shorten it to continue.`,
+          "danger",
+        ),
+      );
+      return;
+    }
     if (message.length === 0) {
       output.append(
         statusLine("ℹ", "Type a message to see the one-time pad in action.", "neutral"),
@@ -60,12 +72,21 @@ export function otpPanel(): HTMLElement {
   }
 
   function refreshKey(): void {
+    if (message.length > MAX_DEMO_BYTES) {
+      render();
+      return;
+    }
     key = generateKey(message.length);
     render();
   }
 
   input.addEventListener("input", () => {
     message = textToBytes(input.value);
+    if (message.length > MAX_DEMO_BYTES) {
+      key = new Uint8Array();
+      render();
+      return;
+    }
     // Correct path: regenerate a fresh key sized to the new message. The UI is
     // structurally unable to produce a short key here (invariant 2).
     key = generateKey(message.length);
@@ -98,7 +119,7 @@ export function otpPanel(): HTMLElement {
       el("p", {
         id: "otp-msg-help",
         class: "help",
-        text: "XOR is on UTF-8 bytes, not characters — a 1-char emoji is several bytes. Each keystroke draws a fresh random key the same length as the message.",
+        text: `XOR is on UTF-8 bytes, not characters — a 1-char emoji is several bytes. Each keystroke draws a fresh random key the same length as the message. This visual exhibit is limited to ${MAX_DEMO_BYTES} bytes.`,
       }),
       controls,
       output,

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { MAX_DEMO_BYTES } from "../src/otp/types.ts";
 
 /**
  * Functional gate for the claims this page makes on screen.
@@ -9,7 +10,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  * arithmetic itself: every ciphertext byte against its plaintext and key byte,
  * the combined strip against both ciphertexts AND against both plaintexts, the
  * revealed crib bytes against the strip they were read from, and the "N of M
- * bytes recovered" counter against the cells actually marked known.
+ * candidate-byte counter against the cells actually marked known.
  *
  * Nothing here compares against a hardcoded hex value — the keys are random per
  * load, so every expectation is one rendered value against another.
@@ -179,6 +180,9 @@ test("panel 2: one ciphertext yields a valid key for every plaintext of its leng
     expect(K, "the derived key must be C XOR P").toEqual(xorArrays(C, P));
     expect(back, "C XOR K must return the chosen plaintext").toEqual(P);
     await expect(panel.locator(".status--calm")).toContainText("This key is genuinely valid");
+    await expect(panel.locator(".status--calm")).toContainText(
+      "does not change the prior odds among plaintexts",
+    );
     await expect(panel.locator(".status--danger")).toHaveCount(0);
     return K;
   }
@@ -216,6 +220,49 @@ test("panel 2: a wrong-length target is refused with both byte counts named", as
   }
 });
 
+test("user-controlled byte exhibits reject oversized inputs", async ({ page }) => {
+  await page.goto(".");
+  const oversized = "a".repeat(MAX_DEMO_BYTES + 1);
+  const setProgrammatically = async (field: Locator, value: string) => {
+    await field.evaluate((node, next) => {
+      const input = node as HTMLInputElement | HTMLTextAreaElement;
+      input.value = next;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }, value);
+  };
+
+  const otp = page.locator("#panel-otp");
+  await setProgrammatically(otp.locator("#otp-msg"), oversized);
+  await expect(otp.locator(".panel-output .status--danger")).toContainText(
+    `accepts at most ${MAX_DEMO_BYTES}`,
+  );
+  await expect(otp.locator(".panel-output .strip")).toHaveCount(0);
+
+  const ttp = page.locator("#panel-ttp");
+  await setProgrammatically(ttp.getByLabel("Message P1"), oversized);
+  await expect(ttp.locator(".ttp-output .status--danger")).toContainText(
+    `accepts at most ${MAX_DEMO_BYTES}`,
+  );
+  await expect(ttp.locator('.strip[aria-label="Combined strip"] .byte')).toHaveCount(0);
+
+  const stream = page.locator("#panel-keystream");
+  await setProgrammatically(stream.getByLabel("Plaintext P1"), oversized);
+  await expect(stream.locator(".ttp-output .status--danger")).toContainText(
+    `accepts at most ${MAX_DEMO_BYTES}`,
+  );
+  await expect(stream.locator('.strip[aria-label="Combined strip"] .byte')).toHaveCount(0);
+
+  const imported = page.locator("#panel-import");
+  await setProgrammatically(
+    imported.getByLabel("Ciphertext 1 (hex)"),
+    "00 ".repeat(MAX_DEMO_BYTES + 1).trim(),
+  );
+  await expect(imported.locator(".import-status .status--danger")).toContainText(
+    `accepts at most ${MAX_DEMO_BYTES}`,
+  );
+  await expect(imported.locator('.strip[aria-label="Combined strip"] .byte')).toHaveCount(0);
+});
+
 // ---------------------------------------------------------------- panel 3
 
 const TTP = "#panel-ttp";
@@ -232,10 +279,10 @@ async function readWorkbench(panel: Locator): Promise<{
   };
 }
 
-/** "N / M bytes recovered in BOTH messages" as the panel currently reports it. */
+/** "N / M byte positions filled" as the panel currently reports it. */
 async function recovered(panel: Locator): Promise<{ solved: number; total: number }> {
   const text = await statusText(panel.locator(".recon-block .status"));
-  const m = /(\d+) \/ (\d+) bytes recovered in BOTH messages/.exec(text);
+  const m = /(\d+) \/ (\d+) byte positions filled in BOTH candidate messages/.exec(text);
   expect(m, `no recovery counter in: ${text}`).not.toBeNull();
   return { solved: Number(m![1]), total: Number(m![2]) };
 }
@@ -367,6 +414,25 @@ test("panel 3: the recovery counter tracks pins through undo, redo, remove and r
   const w = await readWorkbench(panel);
   expect(w.reconP1.every((b) => b === -1), "reset must un-know every byte").toBe(true);
   expect(w.reconP2.every((b) => b === -1)).toBe(true);
+});
+
+test("panel 3: contradictory overlapping cribs are refused", async ({ page }) => {
+  await page.goto(".");
+  const panel = page.locator(TTP);
+  await typeInto(panel.locator(".crib-input"), "the ");
+  await panel.locator(".strip--interactive .byte").nth(0).click();
+  await panel.locator("button.btn--pin").click();
+  const before = await readWorkbench(panel);
+
+  await typeInto(panel.locator(".crib-input"), "xxxx");
+  await panel.locator("button.btn--pin").click();
+
+  await expect(panel.locator(".pin-notice")).toContainText(
+    "conflicts with bytes already pinned at this offset",
+  );
+  await expect(panel.locator(".history-item")).toHaveCount(1);
+  expect(await readWorkbench(panel)).toEqual(before);
+  expect((await recovered(panel)).solved).toBe(4);
 });
 
 test("panel 3: turning key reuse off stops the keys cancelling", async ({ page }) => {
@@ -612,6 +678,10 @@ test("panel 5: pasted ciphertexts are parsed, counted and combined honestly", as
     0,
   );
 
+  // An embedded 0x is malformed, not text to delete before parsing.
+  await typeInto(c1, "aa0xbb");
+  await expect(panel.locator(".import-status .status--danger")).toContainText("not valid hex");
+
   // An odd number of hex digits is equally invalid.
   await typeInto(c1, "000");
   await expect(panel.locator(".import-status .status--danger")).toBeVisible();
@@ -656,7 +726,7 @@ test("panel 5: the reused challenges cancel and the control challenge does not",
   await panel.locator(".strip--interactive .byte").nth(0).click();
   await panel.locator("button.btn--pin").click();
   const rec = await statusText(panel.locator(".recon-block .status"));
-  expect(rec).toContain(`4 / ${S.length} bytes recovered`);
+  expect(rec).toContain(`4 / ${S.length} byte positions filled`);
   expect((await stripBytes(strip(panel, "Reconstructed P2"))).slice(0, 4)).toEqual(
     aP2.slice(0, 4),
   );

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..'); process.chdir(root);
 const config = process.env.PLAYWRIGHT_CONFIG;
 const browser = title => ['npx', ['playwright','test','e2e/claims.spec.ts','--project=chromium','--grep',title,'--workers=1','--retries=0',...(config ? ['--config',config] : [])]];
-const unit = title => ['npx',['vitest','run','src/otp/limits.test.ts','-t',title]];
+const unit = (file,title) => ['npx',['vitest','run',file,'-t',title]];
 const build = ['npm',['run','build']];
 const run = ([cmd,args]) => {
  const env={...process.env,CI:'1'};
@@ -21,24 +21,37 @@ const cases = [
  ['lost key bit','src/otp/limits.ts',
   '((k >> (kappa - 1 - i % kappa)) & 1)',
   '(i % kappa === kappa - 1 ? 0 : ((k >> (kappa - 1 - i % kappa)) & 1))',
-  unit('enumerated key images are injective')],
- ['both reachable counted as win','src/otp/limits.ts','if (has0 === has1) halfWins += 1;','if (has0 === has1) halfWins += 2;',unit('every distinct full-byte pair')],
+  unit('src/otp/limits.test.ts','enumerated key images are injective')],
+ ['both reachable counted as win','src/otp/limits.ts','if (has0 === has1) halfWins += 1;','if (has0 === has1) halfWins += 2;',unit('src/otp/limits.test.ts','every distinct full-byte pair')],
  ['floating tolerance in V2','src/otp/limits.ts',
   'if (mass[m][c] !== mass[0][c]) return false;',
   'if (Math.abs(Number(mass[m][c] - mass[0][c]) / Number(weights.reduce((a,b)=>a+b,0n))) > 1e-8) return false;',
-  unit('independent Shannon conditions agree')],
+  unit('src/otp/limits.test.ts','independent Shannon conditions agree')],
  ['short key painted calm','src/ui/limitsPanel.ts',
   '256-candidates.size} of 256 messages ruled out.`, kappa === 8)',
   '256-candidates.size} of 256 messages ruled out.`, true)',
   browser('limits grid and secrecy verdict')],
- ['wrong period two weight','src/otp/limits.ts','const weight = period === 1 ? 26n : 1n;','const weight = period === 1 ? 26n : 26n;',unit('Katz Lindell Example 2.8')],
+ ['wrong period two weight','src/otp/limits.ts','const weight = period === 1 ? 26n : 1n;','const weight = period === 1 ? 26n : 26n;',unit('src/otp/limits.test.ts','Katz Lindell Example 2.8')],
  ['missing negative claim','src/ui/limitsPanel.ts',
   "export const LIMITS_NEGATIVE_CLAIM = 'Ciphertexts that look uniformly random do not make a scheme perfectly secret.';",
   "export const LIMITS_NEGATIVE_CLAIM = '';",browser('limits negative fixture')],
+ ['oversized random request','src/otp/otp.ts',
+  'offset += GET_RANDOM_VALUES_QUOTA',
+  'offset += length',
+  unit('src/otp/otp.test.ts','fills keys larger than one Web Crypto request')],
+ ['embedded hex prefix deletion','src/otp/types.ts',
+  'token.replace(/^0x/i, "")',
+  'token.replace(/0x/gi, "")',
+  unit('src/otp/challenges.test.ts','rejects odd-length, non-hex, and embedded-prefix input')],
+ ['overlapping crib conflict ignored','src/otp/cribdrag.ts',
+  'next.known[pos] &&',
+  'false && next.known[pos] &&',
+  unit('src/otp/otp.test.ts','rejects a contradictory overlapping crib')],
 ];
 const dirty=spawnSync('git',['diff','--exit-code','--',...new Set(cases.map(x=>x[1]))],{encoding:'utf8'});
 if(dirty.status!==0)throw Error('Commit the source baseline before mutation checks.');
 pass(build,'baseline build');const baseline=hash();const evidence=[];
+console.log('baseline: unmutated copy PASSES');
 mkdirSync('mutation-logs',{recursive:true});
 for(const [name,file,before,after,command] of cases){
  pass(command,`${name}: baseline test`);
@@ -55,3 +68,4 @@ for(const [name,file,before,after,command] of cases){
  evidence.at(-1).restoredGreen=true;console.log(`${name}: killed; exact artifact restored; owning test green`);
 }
 writeFileSync('mutation-evidence.json',JSON.stringify(evidence,null,2)+'\n');
+console.log(`all ${cases.length} mutation(s) caught`);

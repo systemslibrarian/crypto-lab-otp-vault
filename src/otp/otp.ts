@@ -7,6 +7,7 @@ import { xorEqual } from "./xor.ts";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const GET_RANDOM_VALUES_QUOTA = 65_536;
 
 /** UTF-8 encode text to bytes. A 1-char emoji becomes several bytes. */
 export function textToBytes(text: string): Bytes {
@@ -23,9 +24,17 @@ export function bytesToText(bytes: Bytes): string {
  * This is the correct OTP path: one fresh key per message, never reused.
  */
 export function generateKey(length: number): Bytes {
+  if (!Number.isSafeInteger(length) || length < 0) {
+    throw new Error("generateKey: length must be a non-negative safe integer");
+  }
   const key = new Uint8Array(length);
-  if (length > 0) {
-    crypto.getRandomValues(key);
+  // Web Crypto rejects a single getRandomValues() request above 65,536 bytes.
+  // Fill in quota-sized views so the byte helper stays correct even when used
+  // outside the deliberately smaller teaching-UI boundary.
+  for (let offset = 0; offset < length; offset += GET_RANDOM_VALUES_QUOTA) {
+    crypto.getRandomValues(
+      key.subarray(offset, Math.min(offset + GET_RANDOM_VALUES_QUOTA, length)),
+    );
   }
   return key;
 }
